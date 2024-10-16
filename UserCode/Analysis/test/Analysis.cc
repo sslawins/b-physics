@@ -111,17 +111,23 @@ void Analysis::analyze(
   {
     if(abs(genPar.pdgId())/100 == 5)
     {
-      pT->Fill(genPar.pt());
-      cout << "Particle id: " << genPar.pdgId() << endl;
-      cout << "\t daughter id:";
+      cout << "Particle PDGid: " << genPar.pdgId() << endl;
+      cout << "\t daughter PDGid:";
+
+      bool isNotFinal = false;
       for(unsigned int i=0; i < genPar.numberOfDaughters(); i++)
       {
-        cout << " " << genPar.daughterRef(i)->pdgId();
+        int d_pdgid = genPar.daughterRef(i)->pdgId();
+        cout << " " << d_pdgid;
+        if (abs(d_pdgid)/100 == 5) isNotFinal = true;
+
       }
       cout << endl << endl;
+
+      if (abs(genPar.pdgId()) == 531 && !isNotFinal) pT->Fill(genPar.pt());
     }
 
-  }
+  } // particle loop
   cout <<"*** Analyzed event: " << ev.id()<<" analysed event count:"<<++theEventCount << endl << endl;
 }
 
