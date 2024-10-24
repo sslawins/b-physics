@@ -62,6 +62,12 @@ private:
   TH1D *hBsToBd;
   TH1D *hBsToB;
 
+  TH1D *hMuPt;
+  TH1D *hMuEta;
+  TH2D *hMu1Eta_Mu2Eta;
+  TH1D *hGammaPt;
+  TH1D *hGammaEta;
+
   edm::EDGetTokenT < vector<reco::GenParticle> > theGenParticleToken;
 
   std::vector<int> MuMuG = {22, 13, -13};
@@ -83,6 +89,7 @@ Analysis::~Analysis()
   cout <<" DTOR" << endl;
 }
 
+// will not work for repeated particles in the decay channel
 bool Analysis::isSameDecay(const std::vector<int>& dec1, const std::vector<int>& dec2) {
     
     if (dec1.size() != dec2.size()) {
@@ -110,6 +117,11 @@ void Analysis::beginJob()
   hBsToBd =  new TH1D("hBsToBd","Ratio of B_{s} to B_{d} mesons ; Ratio; Counts",120, -0.15, 1.05);
   hBsToB =  new TH1D("hBsToB","Ratio of B_{s} to all B mesons ; Ratio; Counts",120, -0.15, 1.05); 
 
+  hMuPt = new TH1D("hMuPt","Transverse momentum of muons; p_{T} [GeV]; Counts",1000, 0., 100.);
+  hMuEta = new TH1D("hMuEta","Pseudorapidity of muons; #eta; Counts",1000, -5., 5.);
+  hMu1Eta_Mu2Eta = new TH2D("hMu1Eta_Mu2Eta","Pseudorapidity of muons; #eta_{1}; #eta_{2}; Counts",100, -4., 4., 100, -4., 4.);
+  hGammaPt = new TH1D("hGammaPt","Transverse momentum of photons; p_{T} [GeV]; Counts",1000, 0., 100.);
+  hGammaEta = new TH1D("hGammaEta","Pseudorapidity of photons; #eta; Counts",1000, -5., 5.);
 
   cout << "HERE Analysis::beginJob()" << endl;
 }
@@ -131,6 +143,12 @@ void Analysis::endJob()
   hBsToBd-> Write();
   hBsToB-> Write();
 
+  hMuPt-> Write();
+  hMuEta-> Write();
+  hMu1Eta_Mu2Eta-> Write();
+  hGammaPt-> Write();
+  hGammaEta-> Write();
+
   myRootFile.Close();
 
   delete hBPt;
@@ -143,6 +161,12 @@ void Analysis::endJob()
   delete hBsToMuMuG;
   delete hBsToBd;
   delete hBsToB;
+
+  delete hMuPt;
+  delete hMuEta;
+  delete hMu1Eta_Mu2Eta;
+  delete hGammaPt;
+  delete hGammaEta;
 
   cout << "HERE Mgr::endJob()" << endl;
 }
@@ -215,6 +239,25 @@ void Analysis::analyze(
         }
       }
 
+      // fill muon and photon histograms from the Bs decay
+      if(abs(part.pdgId()) == 531 && sum == nDaughters && isSameDecay(decayChannel[0], MuMuG)){
+        vector<float> muEta;
+        for (int i = 0; i < nDaughters; ++i) {
+          const reco::Candidate* daughter = part.daughter(i);
+          if (abs(daughter->pdgId()) == 13){
+            hMuPt -> Fill(daughter->pt());
+            hMuEta -> Fill(daughter->eta());
+            muEta.push_back(daughter->eta());
+          }
+          if (abs(daughter->pdgId()) == 22){
+            hGammaPt -> Fill(daughter->pt());
+            hGammaEta -> Fill(daughter->eta());
+          }
+        }
+        hMu1Eta_Mu2Eta -> Fill(muEta[0], muEta[1]);
+      }
+      //
+
       if (abs(part.pdgId()) == 531){
 
         hBsPt -> Fill(part.pt());
@@ -229,7 +272,7 @@ void Analysis::analyze(
       std::cout << std::endl;
     }
       //std::cout << "Id: " << part.pdgId() << std::endl;
-  }
+  } // end of loop over gen particles
 
   hBsToMuMuG -> Fill (nMuMuGamma);
   hBsToBd -> Fill(nBs*1.0/nBd);
