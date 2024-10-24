@@ -89,7 +89,6 @@ Analysis::~Analysis()
   cout <<" DTOR" << endl;
 }
 
-// will not work for repeated particles in the decay channel
 bool Analysis::isSameDecay(const std::vector<int>& dec1, const std::vector<int>& dec2) {
     
     if (dec1.size() != dec2.size()) {
