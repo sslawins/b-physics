@@ -29,3 +29,7 @@
 <library   file="RecoMuonAnalysis.cc" name="RecoMuonAnalysis">
   <flags   EDM_PLUGIN="1"/>
 </library>
+
+<library   file="HadronizationAnalysis.cc" name="HadronizationAnalysis">
+  <flags   EDM_PLUGIN="1"/>
+</library>
