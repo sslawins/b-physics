@@ -11,6 +11,7 @@
 <use   name="DataFormats/L1DTTrackFinder"/>
 <use   name="DataFormats/PatCandidates"/>
 <use   name="DataFormats/HepMCCandidate"/>
+<use   name="DataFormats/MuonReco"/>
 
 <use   name="TrackingTools/TransientTrack"/>
 <use   name="TrackingTools/Records"/>
@@ -22,5 +23,9 @@
 <use   name="heppdt"/>
 
 <library   file="Analysis.cc" name="Analysis">
+  <flags   EDM_PLUGIN="1"/>
+</library>
+
+<library   file="RecoMuonAnalysis.cc" name="RecoMuonAnalysis">
   <flags   EDM_PLUGIN="1"/>
 </library>
