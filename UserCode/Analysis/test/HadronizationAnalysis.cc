@@ -131,7 +131,7 @@ void HadronizationAnalysis::analyze(
   int nMuMuGamma = 0;
 
   int BmesonPdgId = 0;
-  vector<int> ancestors;
+  vector<vector<const reco::Candidate*>> ancestors;
 
   std::cout << "Number of particles: " << genPar.size() << std::endl;
   //for (std::vector<reco::GenParticle>::const_iterator part = genPar.begin(); part < genPar.end(); part++) {}
@@ -175,10 +175,23 @@ void HadronizationAnalysis::analyze(
         BmesonPdgId = mother->pdgId();
 
         // get the ancestors until the proton
-        while (abs(mother->pdgId()) != 2212)
+        vector<const reco::Candidate*> ancestorLevel;
+        ancestorLevel.push_back(mother);
+        ancestors.push_back(ancestorLevel);
+        while (true)
         {
-          ancestors.push_back(mother->mother(0)->pdgId());
-          mother = mother->mother(0);
+          ancestorLevel.clear();
+          bool endLoop = true;
+          for(auto ancestor : ancestors.back())
+          {
+            if (ancestor->numberOfMothers() > 0) endLoop = false;
+            for(unsigned int i = 0; i < ancestor->numberOfMothers(); i++)
+            {
+              ancestorLevel.push_back(ancestor->mother(i));
+            }
+          }
+          if (endLoop) break;
+          ancestors.push_back(ancestorLevel);
         }
       }
     } // end of loop over B mesons
@@ -190,13 +203,16 @@ void HadronizationAnalysis::analyze(
   if(nBmesons ==2)
   {
     cout << "B meson pdgId: " << BmesonPdgId << endl;
-    for (const auto& ancestor:ancestors)
+    cout << "Ancestors: " << endl;
+    for (const auto& ancestorLevel:ancestors)
     {
-      cout << "\tAncestor pdgId: " << ancestor << endl;
+      for (const auto& ancestor:ancestorLevel)
+      {
+        cout << "  " << ancestor->pdgId();
+      }
+      cout << endl;
     }
   }
-
-
 
   cout <<"*** Analyze event: " << ev.id() <<" analysed event count:" << ++theEventCount << endl;
 }
