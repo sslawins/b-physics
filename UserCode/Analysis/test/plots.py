@@ -55,7 +55,7 @@ def SaveCanvas(canvas, histo, name, output_filename="Plots/{}.png", rebin = 1, n
     cms_label.SetTextFont(42)
     cms_label.SetTextSize(0.04)
     cms_label.SetTextAlign(10)  # Left-align
-    cms_label.DrawLatexNDC(0.1, 0.91, "#bf{CMS} #it{Simulation}")
+    #cms_label.DrawLatexNDC(0.1, 0.91, "#bf{CMS} #it{Simulation}")
     
     '''
     # Draw the luminosity label
@@ -91,9 +91,27 @@ cBPtFrag = TCanvas( 'cBPtFrag' , 'cBPtFrag' , 800 , 600 )
 cBssPtFrag= TCanvas( 'cBssPtFrag' , 'cBssPtFrag' , 800 , 600 )
 cBsPtFrag = TCanvas( 'cBsPtFrag' , 'cBsPtFrag' , 800 , 600 )
 cAntiBsPtFrag = TCanvas( 'cAntiBsPtFrag' , 'cAntiBsPtFrag' , 800 , 600 )
+
 cBsToMuMuG = TCanvas( 'cBsToMuMuG' , 'cBsToMuMuG' , 800 , 600 )
 cBsToBd = TCanvas( 'cBsToBd' , 'cBsToBd' , 800 , 600 )
 cBsToB = TCanvas( 'cBsToB' , 'cBsToB' , 800 , 600 )
+
+cHad = TCanvas("cHad", "cHad", 800, 600)
+cBsParents = TCanvas("cBsParents", "cBsParents", 800, 600)
+cBsAncestor = TCanvas("cBsAncestor", "cBsAncestor", 800, 600)
+cBsProduct = TCanvas("cBsProduct", "cBsProduct", 800, 600)
+
+cGBsGDeltaR = TCanvas("cGBsGDeltaR", "cGBsGDeltaR", 800, 600)
+cGBsEta_GEta = TCanvas("cGBsEta_GEta", "cGBsEta_GEta", 800, 600)
+cGammaBsPt = TCanvas("cGammaBsPt", "cGammaBsPt", 800, 600)
+
+cMuPt = TCanvas("cMuPt", "cMuPt", 800, 600)
+cMuEta = TCanvas("cMuEta", "cMuEta", 800, 600)
+cMu1Eta_Mu2Eta = TCanvas("cMu1Eta_Mu2Eta", "cMu1Eta_Mu2Eta", 800, 600)
+cGammaPt = TCanvas("cGammaPt", "cGammaPt", 800, 600)
+cGammaEta = TCanvas("cGammaEta", "cGammaEta", 800, 600)
+
+
 
 hBPt = gROOT.FindObject('hBPt')
 hBsPt = gROOT.FindObject('hBsPt')
@@ -105,6 +123,22 @@ hBsToMuMuG = gROOT.FindObject('hBsToMuMuG')
 hBsToBd = gROOT.FindObject('hBsToBd')
 hBsToB = gROOT.FindObject('hBsToB')
 
+hHad = gROOT.FindObject('hHad')
+hBsParents = gROOT.FindObject('hBsParents')
+hBsAncestor = gROOT.FindObject('hBsAncestor')
+hBsProduct = gROOT.FindObject('hBsProduct')
+
+hGBsGDeltaR = gROOT.FindObject('hGBsGDeltaR')
+hGBsEta_GEta = gROOT.FindObject('hGBsEta_GEta')
+hGammaBsPt = gROOT.FindObject('hGammaBsPt')
+
+hMuPt = gROOT.FindObject('hMuPt')
+hMuEta = gROOT.FindObject('hMuEta')
+hMu1Eta_Mu2Eta = gROOT.FindObject('hMu1Eta_Mu2Eta')
+hGammaPt = gROOT.FindObject('hGammaPt')
+hGammaEta = gROOT.FindObject('hGammaEta')
+
+
 
 SaveCanvas(cBPt, hBPt, 'BPt', rebin = 5,  norm = True)
 SaveCanvas(cBsPt, hBsPt, 'BsPt', rebin = 5,  norm = True)
@@ -113,7 +147,22 @@ SaveCanvas(cBssPtFrag, hBssPtFrag, 'BssPtFrag', rebin = 5,  norm = True)
 SaveCanvas(cBsPtFrag, hBsPtFrag, 'BsPtFrag', rebin = 5,  norm = True)
 SaveCanvas(cAntiBsPtFrag, hAntiBsPtFrag, 'AntiBsPtFrag', rebin = 5,  norm = True)
 SaveCanvas(cBsToMuMuG, hBsToMuMuG, 'BsToMuMuG', log = True)
-SaveCanvas(cBsToBd, hBsToBd, 'BsToBd')
-SaveCanvas(cBsToB, hBsToB, 'BsToB')
+SaveCanvas(cBsToBd, hBsToBd, 'BsToBd', log = True)
+SaveCanvas(cBsToB, hBsToB, 'BsToB', log = True)
+
+SaveCanvas(cHad, hHad, 'Had', rebin=5, norm=True)
+SaveCanvas(cBsParents, hBsParents, 'BsParents', norm=True)
+SaveCanvas(cBsAncestor, hBsAncestor, 'BsAncestor', norm=True)
+SaveCanvas(cBsProduct, hBsProduct, 'BsProduct', norm=True)
+
+SaveCanvas(cGBsGDeltaR, hGBsGDeltaR, 'GBsGDeltaR')
+SaveCanvas(cGBsEta_GEta, hGBsEta_GEta, 'GBsEta_GEta')
+SaveCanvas(cGammaBsPt, hGammaBsPt, 'GammaBsPt')
+
+SaveCanvas(cMuPt, hMuPt, 'MuPt')
+SaveCanvas(cMuEta, hMuEta, 'MuEta')
+SaveCanvas(cMu1Eta_Mu2Eta, hMu1Eta_Mu2Eta, 'Mu1Eta_Mu2Eta')
+SaveCanvas(cGammaPt, hGammaPt, 'GammaPt')
+SaveCanvas(cGammaEta, hGammaEta, 'GammaEta')
 
 input('press enter to exit')

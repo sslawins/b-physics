@@ -127,17 +127,17 @@ void Analysis::beginJob()
   hAntiBsPtFrag = new TH1D("hAntiBsPtFrag","Transverse momentum of #bar{B}_{s}^{0} ; p_{T} [GeV]; Counts",1000, 0., 100.);
   
   hBsToMuMuG = new TH1D("hBsToMuMuG ", "Number of B_{s}^{0}/#bar{B}_{s}^{0} #rightarrow #mu^{+}#mu^{-}#gamma decays; Decays per Event; Counts", 6, -0.5, 5.5);
-  hBsToBd =  new TH1D("hBsToBd","Ratio of B_{s} to B_{d} mesons ; Ratio; Counts",56, -0.1, 5.5);
+  hBsToBd =  new TH1D("hBsToBd","Ratio of B_{d} to B_{s} mesons ; Ratio; Counts",51, -0.05, 5.05);
   hBsToB =  new TH1D("hBsToB","Ratio of B_{s} to all B mesons ; Ratio; Counts",120, -0.15, 1.05); 
   
-  hHad =  new TH1D("hHad","Number of b quarks hadronizing into a B meson; B group; Events",45, 505.5, 550.5); 
+  hHad =  new TH1D("hHad","Number of b quarks hadronizing into a B meson; B group; Events",95, 505.5, 600.5); 
   hBsParents =  new TH1D("hBsParents","Parents of B_{s}^{0} decaing into #mu^{+}#mu^{-}#gamma; B group; Events",45, 505.5, 550.5);
   hBsAncestor =  new TH1D("hBsAncestor","First produced B meson that evolved into B_{s}^{0} decaing into #mu^{+}#mu^{-}#gamma; ID; Events",45, 505.5, 550.5); 
   hBsProduct =  new TH1D("hBsProduct","Production of B_{s}^{0} ; Decay Channel; Events",7, -1.5, 5.5); 
 
-  hGBsGDeltaR = new TH1D("hGBsGDeltaR","Transverse momentum of muons; #delta R; Events",200, 0., 1.);
-  hGBsEta_GEta = new TH2D("hGBsEta_GEta","Pseudorapidity of #gamma; #eta_{B^{*}_{0}}; #eta_{B_{0}}; Events",100, -4., 4., 100, -4., 4.);
-  hGammaBsPt = new TH1D("hGammaBsPt","Transverse momentum of #gamma produced with B_{s}^{0} ; p_{T} [GeV]; Events",1000, 0., 100.);
+  hGBsGDeltaR = new TH1D("hGBsGDeltaR","Angular separation of #gamma_{B_{s}^{*0}} and #gamma_{B_{s}^{0}}; #Delta R; Events",600, 0., 6.);
+  hGBsEta_GEta = new TH2D("hGBsEta_GEta","Pseudorapidity of #gamma; #eta_{B^{*}_{0}}; #eta_{B_{0}}; Events",600, -6., 6., 600, -6., 6.);
+  hGammaBsPt = new TH1D("hGammaBsPt","Transverse momentum of #gamma produced with B_{s}^{0} ; p_{T} [GeV]; Events",100, 0., 0.7);
 
 
   hMuPt = new TH1D("hMuPt","Transverse momentum of muons; p_{T} [GeV]; Counts",1000, 0., 100.);
