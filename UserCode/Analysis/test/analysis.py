@@ -14,12 +14,10 @@ process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1)
 process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(False))
 
-dataDir = '/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToMuMuGamma_14_0_15_patch1_25_09_2024/TSG-Run3Summer22EEGS_Run2022_BsToMuMuGamma_14_0_15_patch1_25_09_2024/BsToMuMuGamma_14_0_15_patch1_25_09_2024/240925_134701/0000/'
-
+#dataDir = '/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToMuMuGamma_14_0_15_patch1_25_09_2024/TSG-Run3Summer22EEGS_Run2022_BsToMuMuGamma_14_0_15_patch1_25_09_2024/BsToMuMuGamma_14_0_15_patch1_25_09_2024/240925_134701/0000/'
+dataDir = '/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToMuMuGamma_14_0_17_22_10_2024/TSG-Run3Summer22EEGS_Run2022_BsToMuMuGamma_14_0_17_22_10_2024/BsToMuMuGamma_14_0_17_22_10_2024/241022_160351/0000/'
 lsCommand = 'ls -1 ' + dataDir + '| grep root'
 #print('Command: ', lsCommand)
-
-
 
 dir = subprocess.Popen(lsCommand, stdout=subprocess.PIPE, shell=True, text=True)
 lsOutput = dir.communicate()[0]
@@ -36,7 +34,7 @@ print('Number of files: ', len(files))
 #process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring("file:data.root") )
 process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring(files) )
 process.source.skipEvents = cms.untracked.uint32(0)
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1))
 
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('Configuration.Geometry.GeometryDB_cff')

@@ -11,6 +11,7 @@
 <use   name="DataFormats/L1DTTrackFinder"/>
 <use   name="DataFormats/PatCandidates"/>
 <use   name="DataFormats/HepMCCandidate"/>
+<use   name="DataFormats/Math"/>
 
 <use   name="TrackingTools/TransientTrack"/>
 <use   name="TrackingTools/Records"/>
