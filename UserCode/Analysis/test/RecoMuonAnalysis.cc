@@ -14,7 +14,10 @@
 #include "DataFormats/Candidate/interface/Candidate.h"
 
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
-#include <DataFormats/MuonReco/interface/Muon.h>
+#include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/EgammaCandidates/interface/Photon.h"
+
+#include "DataFormats/Math/interface/deltaR.h"
 
 #include "TH1D.h"
 #include "TH2D.h"
@@ -54,6 +57,7 @@ private:
 
   edm::EDGetTokenT < vector<reco::GenParticle> > theGenParticleToken;
   edm::EDGetTokenT < vector<reco::Muon> > theMuonToken;
+  edm::EDGetTokenT < vector<reco::Photon> > thePhotonToken;
 
   // histograms
   TH1D* hMuPt;
@@ -122,20 +126,23 @@ void RecoMuonAnalysis::analyze(
 
   const std::vector<reco::GenParticle> & genPar = ev.get(theGenParticleToken);
   const std::vector<reco::Muon> & recoMuons = ev.get(theMuonToken);
-  const vector<reco::GenParticle> & genMuons;
+  const std::vector<reco::Photon> & recoPhotons = ev.get(thePhotonToken);
+
+  vector<const reco::Candidate*> genMuons;
+  vector<const reco::Muon*> recoMatchedMuons;
 
   for(const auto& genP : genPar)
   {
     if (abs(genP.pdgId()) == 531)
     {
       vector<int> daughters;
-      for(int i=0; i < genP.numberOfDaughters(); i++)
+      for(unsigned int i=0; i < genP.numberOfDaughters(); i++)
       {
         daughters.push_back(genP.daughter(i)->pdgId());
       }
       if(isSameDecay(daughters, MuMuG))
       {
-        for(int i=0; i < genP.numberOfDaughters(); i++)
+        for(unsigned int i=0; i < genP.numberOfDaughters(); i++)
         {
           if(abs(genP.daughter(i)->pdgId()) == 13) genMuons.push_back(genP.daughter(i));
         }
@@ -145,7 +152,19 @@ void RecoMuonAnalysis::analyze(
 
   for (const auto& recoMu : recoMuons)
   {
-    for 
+    for (const reco::Candidate* genMu : genMuons)
+    {
+      if (reco::deltaR(recoMu, *genMu) < 0.01)
+      {
+        recoMatchedMuons.push_back(&recoMu);
+        break;
+      }
+    }
+  }
+
+  for (const auto recoMatchedMu : recoMatchedMuons)
+  {
+    hMuPt->Fill(recoMatchedMu->pt());
   }
 
 
