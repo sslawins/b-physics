@@ -14,7 +14,10 @@
 #include "DataFormats/Candidate/interface/Candidate.h"
 
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
-#include <DataFormats/MuonReco/interface/Muon.h>
+#include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/EgammaCandidates/interface/Photon.h"
+
+#include "DataFormats/Math/interface/deltaR.h"
 
 #include "TH1D.h"
 #include "TH2D.h"
@@ -54,10 +57,16 @@ private:
 
   edm::EDGetTokenT < vector<reco::GenParticle> > theGenParticleToken;
   edm::EDGetTokenT < vector<reco::Muon> > theMuonToken;
+  edm::EDGetTokenT < vector<reco::Photon> > thePhotonToken;
 
   // histograms
   TH1D* hMuPt;
+  TH1D* hGammaPt;
 
+  TH2D* hGenMuPtVsEta;
+  TH2D* hGenGammaPtVsEta;
+
+  TH2D* hRecoMuPtVsEta;
   std::vector<int> MuMuG = {22, 13, -13};
 
 };
@@ -70,6 +79,7 @@ RecoMuonAnalysis::RecoMuonAnalysis(const edm::ParameterSet& conf)
 
   theGenParticleToken = consumes< vector<reco::GenParticle>  >( edm::InputTag("genParticles"));
   theMuonToken = consumes< vector<reco::Muon>  >( edm::InputTag("muons"));
+  thePhotonToken = consumes< vector<reco::Photon>  >( edm::InputTag("photons"));
 
 }
 
@@ -94,7 +104,13 @@ bool RecoMuonAnalysis::isSameDecay(const std::vector<int>& dec1, const std::vect
 void RecoMuonAnalysis::beginJob()
 {
   //create a histogram
-  hMuPt = new TH1D("hRecoMuPt", "reco muon pT; pT; counts", 100, 0, 30);
+  hMuPt = new TH1D("hRecoMuPt", "reco muon pT; pT [GeV]; counts", 100, 0, 30);
+  hGammaPt = new TH1D("hRecoGammaPt", "reco photon pT; pT [GeV]; counts", 100, 0, 30);
+
+  hGenMuPtVsEta = new TH2D("hGenMuPtVsEta", "gen muon pT vs eta; pT [GeV]; eta", 100, 0, 30, 100, -3, 3);
+  hGenGammaPtVsEta = new TH2D("hGenGammaPtVsEta", "gen photon pT vs eta; pT [GeV]; eta", 100, 0, 30, 100, -3, 3);
+
+  hRecoMuPtVsEta = new TH2D("hRecoMuPtVsEta", "reco muon pT vs eta; pT [GeV]; eta", 100, 0, 30, 100, -3, 3);
 
   cout << "HERE RecoMuonAnalysis::beginJob()" << endl;
 }
@@ -106,10 +122,22 @@ void RecoMuonAnalysis::endJob()
 
   //write histogram data
   hMuPt -> Write();
+  hGammaPt -> Write();
+
+  hGenMuPtVsEta -> Write();
+  hGenGammaPtVsEta -> Write();
+
+  hRecoMuPtVsEta -> Write();
 
   myRootFile.Close();
 
   delete hMuPt;
+  delete hGammaPt;
+
+  delete hGenMuPtVsEta;
+  delete hGenGammaPtVsEta;
+
+  delete hRecoMuPtVsEta;
 
   cout << "HERE RecoMuonAnalysis::endJob()" << endl;
 }
@@ -121,10 +149,81 @@ void RecoMuonAnalysis::analyze(
   std::cout << " -------------------------------- HERE RecoMuonAnalysis::analyze "<< std::endl;
 
   const std::vector<reco::GenParticle> & genPar = ev.get(theGenParticleToken);
-  const std::vector<reco::Muon> & muons = ev.get(theMuonToken);
+  const std::vector<reco::Muon> & recoMuons = ev.get(theMuonToken);
+  const std::vector<reco::Photon> & recoPhotons = ev.get(thePhotonToken);
 
-  for (const auto& mu:muons ){
-    hMuPt -> Fill(mu.pt());
+  vector<const reco::Candidate*> genMuons;
+  vector<const reco::Muon*> recoMatchedMuons;
+
+  vector<const reco::Candidate*> genPhotons;
+  vector<const reco::Photon*> recoMatchedPhotons;
+
+  for(const auto& genP : genPar)
+  {
+    if (abs(genP.pdgId()) == 531)
+    {
+      vector<int> daughters;
+      for(unsigned int i=0; i < genP.numberOfDaughters(); i++)
+      {
+        daughters.push_back(genP.daughter(i)->pdgId());
+      }
+      if(isSameDecay(daughters, MuMuG))
+      {
+        for(unsigned int i=0; i < genP.numberOfDaughters(); i++)
+        {
+          if(abs(genP.daughter(i)->pdgId()) == 13) genMuons.push_back(genP.daughter(i));
+          if(abs(genP.daughter(i)->pdgId()) == 22) genPhotons.push_back(genP.daughter(i));
+        }
+      }
+    }
+  }
+  // reco muon matching
+  for (const auto& recoMu : recoMuons)
+  {
+    for (const reco::Candidate* genMu : genMuons)
+    {
+      if (reco::deltaR(recoMu, *genMu) < 0.01)
+      {
+        recoMatchedMuons.push_back(&recoMu);
+        break;
+      }
+    }
+  }
+
+  // reco photon matching
+  for (const auto& recoPh : recoPhotons)
+  {
+    for (const reco::Candidate* genPh : genPhotons)
+    {
+      if (reco::deltaR(recoPh, *genPh) < 0.01)
+      {
+        recoMatchedPhotons.push_back(&recoPh);
+        break;
+      }
+    }
+  }
+
+  for (const auto genMu : genMuons)
+  {
+    hGenMuPtVsEta->Fill(genMu->pt(), genMu->eta());
+  }
+
+  for (const auto genPh : genPhotons)
+  {
+    hGenGammaPtVsEta->Fill(genPh->pt(), genPh->eta());
+  }
+
+
+
+  for (const auto recoMatchedMu : recoMatchedMuons)
+  {
+    hMuPt->Fill(recoMatchedMu->pt());
+    hRecoMuPtVsEta->Fill(recoMatchedMu->pt(), recoMatchedMu->eta());
+  }
+
+  for (const auto recoMatchedPh : recoMatchedPhotons)
+  {
+    hGammaPt->Fill(recoMatchedPh->pt());
   }
 
 

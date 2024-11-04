@@ -12,6 +12,7 @@
 <use   name="DataFormats/PatCandidates"/>
 <use   name="DataFormats/HepMCCandidate"/>
 <use   name="DataFormats/MuonReco"/>
+<use   name="DataFormats/EgammaCandidates"/>
 
 <use   name="TrackingTools/TransientTrack"/>
 <use   name="TrackingTools/Records"/>
@@ -27,5 +28,9 @@
 </library>
 
 <library   file="RecoMuonAnalysis.cc" name="RecoMuonAnalysis">
+  <flags   EDM_PLUGIN="1"/>
+</library>
+
+<library   file="HadronizationAnalysis.cc" name="HadronizationAnalysis">
   <flags   EDM_PLUGIN="1"/>
 </library>
