@@ -58,6 +58,9 @@ private:
 
   std::vector<int> MuMuG = {22, 13, -13};
 
+  int total = 0;
+  int nBsTotal = 0;
+
 };
 
 
@@ -115,6 +118,8 @@ void HadronizationAnalysis::endJob()
   delete hPdgidNegative;
 
   cout << "HERE HadronizationAnalysis::endJob()" << endl;
+
+  cout << "Fraction of Bs: " << (double)nBsTotal/total << endl;
 }
 
 
@@ -231,8 +236,11 @@ void HadronizationAnalysis::analyze(
   if(nBmesons == 2 && BmesonPdgId > 0) hPdgidPositive->Fill(BmesonPdgId);
   if(nBmesons == 2 && BmesonPdgId < 0) hPdgidNegative->Fill(BmesonPdgId);
 
-  if(nBmesons ==2)
+  if(nBmesons == 2)
   {
+    total++;
+    if (abs(BmesonPdgId) == 531 || abs(BmesonPdgId) == 533) nBsTotal++;
+
     cout << "B meson pdgId: " << BmesonPdgId << endl;
     cout << "Ancestors: " << endl;
     for (const auto& ancestorLevel:ancestors)
