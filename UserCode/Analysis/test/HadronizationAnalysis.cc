@@ -134,6 +134,7 @@ void HadronizationAnalysis::analyze(
   int nBd = 0;
   int nBs = 0;
   int nMuMuGamma = 0;
+  bool oscillationFlag = false;
 
   int BmesonPdgId = 0;
   vector<vector<const reco::Candidate*>> ancestors;
@@ -171,10 +172,13 @@ void HadronizationAnalysis::analyze(
 
       if(isFinal) nBmesons++;
 
+
+      // find the B mesons that are forced to decay to mu mu gamma
       if(isSameDecay(decayChannel[0], MuMuG) && abs(part.pdgId()) == 531)
       {
         const reco::Candidate* mother = &part;
         while (abs(mother->mother(0)->pdgId())/100 == 5){
+          if (mother->pdgId() == -mother->mother(0)->pdgId()) oscillationFlag = true;
           mother = mother->mother(0);
         }
         forcedBmesonPdgId = mother->pdgId();
@@ -233,10 +237,10 @@ void HadronizationAnalysis::analyze(
     } // end of loop over B mesons
   } // end of loop over gen particles
 
-  if(nBmesons == 2 && BmesonPdgId > 0) hPdgidPositive->Fill(BmesonPdgId);
-  if(nBmesons == 2 && BmesonPdgId < 0) hPdgidNegative->Fill(BmesonPdgId);
+  if(nBmesons == 2 && BmesonPdgId > 0 && oscillationFlag == false) hPdgidPositive->Fill(BmesonPdgId);
+  if(nBmesons == 2 && BmesonPdgId < 0 && oscillationFlag == false) hPdgidNegative->Fill(BmesonPdgId);
 
-  if(nBmesons == 2)
+  if(nBmesons == 2 && oscillationFlag == false)
   {
     total++;
     if (abs(BmesonPdgId) == 531 || abs(BmesonPdgId) == 533) nBsTotal++;
