@@ -121,10 +121,31 @@ void RecoMuonAnalysis::analyze(
   std::cout << " -------------------------------- HERE RecoMuonAnalysis::analyze "<< std::endl;
 
   const std::vector<reco::GenParticle> & genPar = ev.get(theGenParticleToken);
-  const std::vector<reco::Muon> & muons = ev.get(theMuonToken);
+  const std::vector<reco::Muon> & recoMuons = ev.get(theMuonToken);
+  const vector<reco::GenParticle> & genMuons;
 
-  for (const auto& mu:muons ){
-    hMuPt -> Fill(mu.pt());
+  for(const auto& genP : genPar)
+  {
+    if (abs(genP.pdgId()) == 531)
+    {
+      vector<int> daughters;
+      for(int i=0; i < genP.numberOfDaughters(); i++)
+      {
+        daughters.push_back(genP.daughter(i)->pdgId());
+      }
+      if(isSameDecay(daughters, MuMuG))
+      {
+        for(int i=0; i < genP.numberOfDaughters(); i++)
+        {
+          if(abs(genP.daughter(i)->pdgId()) == 13) genMuons.push_back(genP.daughter(i));
+        }
+      }
+    }
+  }
+
+  for (const auto& recoMu : recoMuons)
+  {
+    for 
   }
 
 
