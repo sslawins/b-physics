@@ -132,6 +132,8 @@ void HadronizationAnalysis::analyze(
 
   int BmesonPdgId = 0;
   vector<vector<const reco::Candidate*>> ancestors;
+  int forcedBmesonPdgId = 0;
+  vector<vector<const reco::Candidate*>> forcedAncestors;
 
   std::cout << "Number of particles: " << genPar.size() << std::endl;
   //for (std::vector<reco::GenParticle>::const_iterator part = genPar.begin(); part < genPar.end(); part++) {}
@@ -163,6 +165,35 @@ void HadronizationAnalysis::analyze(
       if (sum == nDaughters) isFinal = true;
 
       if(isFinal) nBmesons++;
+
+      if(isSameDecay(decayChannel[0], MuMuG) && abs(part.pdgId()) == 531)
+      {
+        const reco::Candidate* mother = &part;
+        while (abs(mother->mother(0)->pdgId())/100 == 5){
+          mother = mother->mother(0);
+        }
+        forcedBmesonPdgId = mother->pdgId();
+
+        // get the ancestors until the proton
+        vector<const reco::Candidate*> ancestorLevel;
+        ancestorLevel.push_back(mother);
+        forcedAncestors.push_back(ancestorLevel);
+        while (true)
+        {
+          ancestorLevel.clear();
+          bool endLoop = true;
+          for(auto ancestor : forcedAncestors.back())
+          {
+            if (ancestor->numberOfMothers() > 0) endLoop = false;
+            for(unsigned int i = 0; i < ancestor->numberOfMothers(); i++)
+            {
+              ancestorLevel.push_back(ancestor->mother(i));
+            }
+          }
+          if (endLoop) break;
+          forcedAncestors.push_back(ancestorLevel);
+        }
+      }
 
 
       // find the B mesons that are not Bs forced to decay to mu mu gamma
@@ -205,6 +236,17 @@ void HadronizationAnalysis::analyze(
     cout << "B meson pdgId: " << BmesonPdgId << endl;
     cout << "Ancestors: " << endl;
     for (const auto& ancestorLevel:ancestors)
+    {
+      for (const auto& ancestor:ancestorLevel)
+      {
+        cout << "  " << ancestor->pdgId();
+      }
+      cout << endl;
+    }
+
+    cout << "Forced Bs meson pdgId: " << forcedBmesonPdgId << endl;
+    cout << "Ancestors: " << endl;
+    for (const auto& ancestorLevel:forcedAncestors)
     {
       for (const auto& ancestor:ancestorLevel)
       {
