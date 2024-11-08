@@ -28,7 +28,7 @@ def DrawHisto(histo, color, line=1, width=2):
     histo.SetFillColor(color)
 
 
-def SaveCanvas(canvas, histo, name, output_filename="Plots/{}.png", rebin=1, norm=False, log=False, xmin=None, xmax=None):
+def SaveCanvas(canvas, histo, name, output_filename="Plots/PhiGamma/{}.png", rebin=1, norm=False, log=False, xmin=None, xmax=None):
     if norm:
         NormalizeHistogram(histo)
 
@@ -42,6 +42,7 @@ def SaveCanvas(canvas, histo, name, output_filename="Plots/{}.png", rebin=1, nor
 
     # Rebinnowanie histogramu przed rysowaniem
     histo.Rebin(rebin)
+
 
     # Rysowanie histogramu
     DrawHisto(histo, 19)
@@ -64,36 +65,34 @@ def SaveCanvas(canvas, histo, name, output_filename="Plots/{}.png", rebin=1, nor
 
 
 print("Hello ROOT")
-fileName = "histos.root"
+fileName = "histos_PhiGamma.root"
 print('Read data from:', fileName)
 
 f = TFile(fileName)
 f.ls()
 
-# Histograms with their settings
+# Dodano zakresy dla osi X
 histograms = {
     'cBPt': ('hBPt', 'BPt', 1, True, False, 0, 50),
-    'cBsPt': ('hBsPt', 'BsPt', 1, True, False, 0, 50),
-    'cBPtFrag': ('hBPtFrag', 'BPtFrag', 1, True, False, 0, 50),
-    'cBssPtFrag': ('hBssPtFrag', 'BssPtFrag', 1, True, False, 0, 50),
-    'cBsPtFrag': ('hBsPtFrag', 'BsPtFrag', 1, True, False, 0, 50),
-    'cAntiBsPtFrag': ('hAntiBsPtFrag', 'AntiBsPtFrag', 5, True, False, 0, 50),
-    'cBsToMuMuG': ('hBsToMuMuG', 'BsToMuMuG', 1, False, True, None, None),
-    'cBsToBd': ('hBsToBd', 'BsToBd', 1, False, True, None, None),
+    'cBssPt': ('hBssPt', 'BssPt', 1, True, False, 0, 50),
+    'cBsToPhiG': ('hBsToPhiG', 'BsToPhiG', 1, False, True, None, None),
     'cBsToB': ('hBsToB', 'BsToB', 1, False, True, None, None),
-    'cInit': ('hInit', 'Init', 1, True, True, None, None),
+    'cNinit': ('hNinit', 'Ninit', 1, True, True, None, None),
+    'cInitial': ('hInitial', 'Initial', 1, True, True, None, None),
     'cHad': ('hHad', 'Had', 1, True, True, None, None),
     'cBsParents': ('hBsParents', 'BsParents', 1, True, True, None, None),
     'cBsAncestor': ('hBsAncestor', 'BsAncestor', 1, True, True, None, None),
-    'cBsProduct': ('hBsProduct', 'BsProduct', 1, True, True, None, None),
-    'cGBsGDeltaR': ('hGBsGDeltaR', 'GBsGDeltaR', 1, True, False, 0, 7),
-    'cGBsEta_GEta': ('hGBsEta_GEta', 'GBsEta_GEta', 5, True, False, -10, 10),
-    'cGammaBsPt': ('hGammaBsPt', 'GammaBsPt', 1, True, False, 0, 50),
+    'cCascade': ('hCascade', 'Cascade', 1, True, True, None, None),
+    'cMuMuDeltaR': ('hMuMuDeltaR', 'MuMuDeltaR', 2, True, False, 0, 7),
+    'cMuEta_MuEta': ('hMuEta_MuEta', 'MuEta_MuEta', 8, False, False, -10, 10),
     'cMuPt': ('hMuPt', 'MuPt', 1, True, False, 0, 10),
-    'cMuEta': ('hMuEta', 'MuEta', 1, False, False, -10, 10),
-    'cMu1Eta_Mu2Eta': ('hMu1Eta_Mu2Eta', 'Mu1Eta_Mu2Eta', 10, False, False, -10, 10),
-    'cGammaPt': ('hGammaPt', 'GammaPt', 1, True, False, 0, 30),
-    'cGammaEta': ('hGammaEta', 'GammaEta', 1, False, False, -10, 10),
+    'cMuPtAll': ('hMuPtAll', 'MuPtAll', 1, False, False, 0, 15),
+    'cPhiPt': ('hPhiPt', 'PhiPt', 1, True, False, 0, 30),
+    'cPhiEta': ('hPhiEta', 'PhiEta', 2, False, False, -10, 10),
+    'cGEta_GPt': ('hGEta_GPt', 'GEta_GPt', 1, False, False, -10, 10),
+    'cPhiEta_PhiPt': ('hPhiEta_PhiPt', 'PhiEta_PhiPt', 1, False, False, -10, 10),
+    'cGammaPt': ('hGammaPt', 'GammaPt', 1, True, False, 0, 30.),
+    'cGammaEta': ('hGammaEta', 'GammaEta', 2, False, False, -10, 10)
 }
 
 canvases = {name: TCanvas(name, name, 800, 600) for name in histograms.keys()}

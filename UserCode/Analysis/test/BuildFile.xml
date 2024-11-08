@@ -25,3 +25,7 @@
 <library   file="Analysis.cc" name="Analysis">
   <flags   EDM_PLUGIN="1"/>
 </library>
+
+<library   file="ControlChannelPhi.cc" name="ControlChannelPhi">
+  <flags   EDM_PLUGIN="1"/>
+</library>

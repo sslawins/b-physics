@@ -47,7 +47,7 @@ public:
   virtual void endJob();
 
   bool isSameChannel(const std::vector<int>&, const std::vector<int>&);
-  //double delta_R(const reco::Candidate*)
+  std::vector<std::vector<const reco::Candidate*>> bFamilyTree(const std::vector<reco::GenParticle>&);
 
 private:
 
@@ -65,6 +65,7 @@ private:
   TH1D *hBsToBd;
   TH1D *hBsToB;
 
+  TH1D *hInit;
   TH1D *hHad; 
   TH1D *hBsParents ;
   TH1D *hBsAncestor ; 
@@ -83,7 +84,7 @@ private:
   edm::EDGetTokenT < vector<reco::GenParticle> > theGenParticleToken;
 
   std::vector<int> MuMuG = {22, 13, -13};
-  std::vector<int> BsStarG= {22, 533};
+  std::vector<int> BsG= {22, 531};
   std::vector<int> Bs= {531};
 
 };
@@ -115,6 +116,72 @@ bool Analysis::isSameChannel(const std::vector<int>& dec1, const std::vector<int
     return dec1Set == dec2Set;
 }
 
+std::vector<std::vector<const reco::Candidate*>> Analysis::bFamilyTree(const std::vector<reco::GenParticle>& genParticles) {
+    
+    std::vector<std::vector<const reco::Candidate*>> bTree; //a vector to contain the tree
+    bool initial = true;
+    std::vector<const reco::Candidate*> lineage;
+
+    for (const auto& part : genParticles) {
+        if (abs(part.pdgId()) / 100 == 5) { // Check if the particle is a B meson
+
+          for(size_t momIter = 0; momIter < part.numberOfMothers(); ++momIter){
+            const reco::Candidate* mother = part.mother(momIter);
+            if ( std::abs(mother->pdgId()) / 100 == 5 ) {
+              // if it's an initial B, create a vector for its descendant and change the bool value
+              initial = false;
+              
+              //lineage.push_back(mother); //first in its lineage
+              break; //no need to continue
+            }
+          }
+
+          //if it is an initial B, upload the decending B into the vector
+          if( initial ){
+            lineage.clear();
+            const reco::Candidate* ancestor = static_cast<const reco::Candidate*>(&part);
+            lineage.push_back(ancestor);
+
+            while (ancestor != nullptr){
+              std::vector<int> decay;
+              bool last = true;
+
+              for (unsigned int dauIter = 0; dauIter < ancestor->numberOfDaughters(); ++dauIter) {
+                const reco::Candidate* daughter = ancestor -> daughter(dauIter);
+                decay.push_back( daughter->pdgId() );
+
+                if (last== true && (abs(daughter->pdgId()) / 100) == 5) { //mother B found
+
+                    lineage.push_back(daughter);
+                    ancestor = daughter; // new ancestor
+                    
+                    last = false;
+                    
+                    break; // stop, and enter the while loop once again
+                }
+              }
+              
+              if (last){
+
+                if( isSameChannel(decay, MuMuG) && bTree.size() != 0 ) {
+                  bTree.insert(bTree.begin(), lineage);
+                }else{
+                  bTree.push_back(lineage);
+                }
+                break;
+                //ancestor = nullptr;
+              }  // stop, if there is no B descendent
+
+            }
+            
+          }
+
+        }
+    }  
+    return bTree;
+}
+
+
 
 void Analysis::beginJob()
 {
@@ -130,16 +197,18 @@ void Analysis::beginJob()
   hBsToBd =  new TH1D("hBsToBd","Ratio of B_{d} to B_{s} mesons ; Ratio; Counts",51, -0.05, 5.05);
   hBsToB =  new TH1D("hBsToB","Ratio of B_{s} to all B mesons ; Ratio; Counts",120, -0.15, 1.05); 
   
-  hHad =  new TH1D("hHad","Number of b quarks hadronizing into a B meson; B group; Events",95, 505.5, 600.5); 
-  hBsParents =  new TH1D("hBsParents","Parents of B_{s}^{0} decaing into #mu^{+}#mu^{-}#gamma; B group; Events",45, 505.5, 550.5);
-  hBsAncestor =  new TH1D("hBsAncestor","First produced B meson that evolved into B_{s}^{0} decaing into #mu^{+}#mu^{-}#gamma; ID; Events",45, 505.5, 550.5); 
+  hInit =  new TH1D("hInit","Number of b quarks that hadronized into B measons; per event; Events",95, 505.5, 600.5);
+  hHad =  new TH1D("hHad","Number of b quarks that hadronized B mesons; Particle ID; Events",95, 505.5, 600.5); 
+  hBsParents =  new TH1D("hBsParents","Parents of B_{s}^{0} decaing into #mu^{+}#mu^{-}#gamma; Particle ID; Events",45, 505.5, 550.5);
+  hBsAncestor =  new TH1D("hBsAncestor","First produced B meson that evolved into B_{s}^{0} #rightarrow #mu^{+}#mu^{-}#gamma; Particle ID; Events",45, 505.5, 550.5); 
   hBsProduct =  new TH1D("hBsProduct","Production of B_{s}^{0} ; Decay Channel; Events",7, -1.5, 5.5); 
 
-  hGBsGDeltaR = new TH1D("hGBsGDeltaR","Angular separation of #gamma_{B_{s}^{*0}} and #gamma_{B_{s}^{0}}; #Delta R; Events",600, 0., 6.);
+
+  hGBsGDeltaR = new TH1D("hGBsGDeltaR","Angular separation between #gamma_{B_{s}^{*0}} and #gamma_{B_{s}^{0}}; #Delta R; Events",600, 0., 6.);
   hGBsEta_GEta = new TH2D("hGBsEta_GEta","Pseudorapidity of #gamma; #eta_{B^{*}_{0}}; #eta_{B_{0}}; Events",600, -6., 6., 600, -6., 6.);
   hGammaBsPt = new TH1D("hGammaBsPt","Transverse momentum of #gamma produced with B_{s}^{0} ; p_{T} [GeV]; Events",100, 0., 0.7);
 
-
+  //Szymon's part
   hMuPt = new TH1D("hMuPt","Transverse momentum of muons; p_{T} [GeV]; Counts",1000, 0., 100.);
   hMuEta = new TH1D("hMuEta","Pseudorapidity of muons; #eta; Counts",1000, -5., 5.);
   hMu1Eta_Mu2Eta = new TH2D("hMu1Eta_Mu2Eta","Pseudorapidity of muons; #eta_{1}; #eta_{2}; Counts",100, -4., 4., 100, -4., 4.);
@@ -166,6 +235,7 @@ void Analysis::endJob()
   hBsToBd-> Write();
   hBsToB-> Write();
   
+  hInit-> Write();
   hHad-> Write();
   hBsParents -> Write();
   hBsAncestor -> Write();
@@ -194,6 +264,7 @@ void Analysis::endJob()
   delete hBsToBd;
   delete hBsToB;
   
+  delete hInit;
   delete hHad;
   delete hBsParents ;
   delete hBsAncestor ;
@@ -230,6 +301,15 @@ void Analysis::analyze(
 
   const reco::Candidate* Gamma0;
 
+  std::vector<std::vector<const reco::Candidate*>> tree = bFamilyTree(genPar);
+  std::cout <<"Family tree: " << std::endl;
+  for (const auto& lineage : tree) { // Iteruj po ka¿dym wierszu w tree
+    for (const auto* particle : lineage) { // Iteruj po cz¹stkach w danym wierszu
+        std::cout << particle->pdgId() << " "; // Wypisz pdgId ka¿dej cz¹stki w jednym rzêdzie
+    }
+    std::cout << std::endl; // Przejd do nowej linii po zakoñczeniu wiersza
+  }
+
   //std::cout << "Number of particles: " << genPar.size() << std::endl;
   
   for (const auto& part:genPar ){
@@ -239,7 +319,7 @@ void Analysis::analyze(
       //double dr = reco::deltaR2(part, part);
       
       std::cout << std::endl;
-      //std::cout << "B meseon:  " << part.pdgId() << std::endl;
+      std::cout << "B meseon:  " << part.pdgId() << std::endl;
 
       hBPt -> Fill(part.pt());
 
@@ -347,32 +427,27 @@ void Analysis::analyze(
         const reco::Candidate* ancestor = static_cast<const reco::Candidate*>(&part); //ancestor = currently analized B
         
         firstAncestor.push_back(ancestor);
-
+        int production = 0;
         while (ancestor != nullptr) { 
           bool foundMotherB = false;
           cout << "Parent " << ancestor ->pdgId() <<std::endl;
 
           for (unsigned int i = 0; i < ancestor->numberOfMothers(); ++i) {
             //cout << ancestor->mother(i)->pdgId() << " " << std::endl;
-/*
-            if(firstAncestor.size() == 2 && isSameChannel(firstProductionBs, Bs)  ){
-              firstProductionBs.push_back(abs(ancestor->mother(i) ->pdgId()));
-              cout << "Rodzice" << abs(ancestor->mother(i) ->pdgId()) <<endl;
-              cout << "First production of Bs!!!!!" << std::endl;
-                  
-            }
-*/
+
             if (foundMotherB == false && (abs(ancestor->mother(i)->pdgId()) / 100) == 5) { //mother B found
 
                 if(ancestor == &part) {
                   hBsParents -> Fill( abs(ancestor->mother(i) ->pdgId()) );
                   
-                  if( isSameChannel(productionChannel, BsStarG)){
-                    hBsProduct -> Fill(1) ;
+                  if( isSameChannel(productionChannel, BsG)){
+                    production = 1;
+                    //hBsProduct -> Fill(1) ;
                   }else if( isSameChannel(productionChannel, Bs)){
-                    hBsProduct -> Fill(2) ;
+                    production = 2;
+                    //hBsProduct -> Fill(2) ;
                   }else{
-                    hBsProduct -> Fill(0) ;
+                    production = 3;
                   }
                 }
                 firstAncestor.push_back(ancestor->mother(i));
@@ -387,7 +462,11 @@ void Analysis::analyze(
           if (!foundMotherB) break;  // stop, if there is no B parent
         }
 
-
+        if( firstAncestor.size() == 1 ){
+          hBsProduct -> Fill(4);
+        }else{
+          hBsProduct -> Fill(production);
+        }
         cout << firstAncestor.size() << std::endl;
 
         cout << "The oldest mu mu gamma parent: " << firstAncestor.back() ->pdgId() << std::endl;
@@ -414,7 +493,7 @@ void Analysis::analyze(
   } // end of the loop over gen particles
   
 
-
+  hInit -> Fill(initialBpdg.size());
   if (initialBpdg.size() == 2 ){
     
     if(initialBpdg.at(0) ==firstAncestor.back()->pdgId() && initialBpdg.at(1) == firstAncestor.back()->pdgId()){ //if both are the same
@@ -422,7 +501,7 @@ void Analysis::analyze(
       hHad ->Fill(firstAncestor.back()->pdgId());
     }else if (initialBpdg.at(0) ==firstAncestor.back()->pdgId()){ //if the first is the Bs ancestor, take the other one
       hHad ->Fill(abs(initialBpdg.at(1)));
-    }else if (initialBpdg.at(1) ==firstAncestor.back()->pdgId()){
+    }else if (initialBpdg.at(1) == firstAncestor.back()->pdgId()){
       hHad ->Fill(abs(initialBpdg.at(0)));
     }else{
       hHad ->Fill(506);
