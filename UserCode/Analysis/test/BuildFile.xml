@@ -34,3 +34,7 @@
 <library   file="HadronizationAnalysis.cc" name="HadronizationAnalysis">
   <flags   EDM_PLUGIN="1"/>
 </library>
+
+<library   file="DataAnalysis.cc" name="DataAnalysis">
+  <flags   EDM_PLUGIN="1"/>
+</library>
