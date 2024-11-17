@@ -67,7 +67,18 @@ private:
   TH2D* hGenGammaPtVsEta;
 
   TH2D* hRecoMuPtVsEta;
+  TH2D* hRecoGammaPtVsEta;
+
+  TH2D* hRecoVsGenMuPt;
+  TH2D* hRecoVsGenGammaPt;
+
+  TH1D* hMuDeltaR;
+  TH1D* hGammaDeltaR;
+
   std::vector<int> MuMuG = {22, 13, -13};
+
+  int nPhotonsWithMuonCondition = 0;
+  int nMuonsWithCondition = 0;
 
 };
 
@@ -111,6 +122,13 @@ void RecoMuonAnalysis::beginJob()
   hGenGammaPtVsEta = new TH2D("hGenGammaPtVsEta", "gen photon pT vs eta; pT [GeV]; eta", 100, 0, 30, 100, -3, 3);
 
   hRecoMuPtVsEta = new TH2D("hRecoMuPtVsEta", "reco muon pT vs eta; pT [GeV]; eta", 100, 0, 30, 100, -3, 3);
+  hRecoGammaPtVsEta = new TH2D("hRecoGammaPtVsEta", "reco photon pT vs eta; pT [GeV]; eta", 100, 0, 30, 100, -3, 3);
+
+  hRecoVsGenMuPt = new TH2D("hRecoVsGenMuPt", "reco vs gen muon pT; gen pT [GeV]; reco pT [GeV]", 100, 0, 30, 100, 0, 30);
+  hRecoVsGenGammaPt = new TH2D("hRecoVsGenGammaPt", "reco vs gen photon pT; gen pT [GeV]; reco pT [GeV]", 100, 0, 30, 100, 0, 30);
+
+  hMuDeltaR = new TH1D("hMuDeltaR", "reco muon deltaR; deltaR; counts", 100, 0, 0.01);
+  hGammaDeltaR = new TH1D("hGammaDeltaR", "reco photon deltaR; deltaR; counts", 100, 0, 0.01);
 
   cout << "HERE RecoMuonAnalysis::beginJob()" << endl;
 }
@@ -128,6 +146,13 @@ void RecoMuonAnalysis::endJob()
   hGenGammaPtVsEta -> Write();
 
   hRecoMuPtVsEta -> Write();
+  hRecoGammaPtVsEta -> Write();
+
+  hRecoVsGenMuPt -> Write();
+  hRecoVsGenGammaPt -> Write();
+
+  hMuDeltaR -> Write();
+  hGammaDeltaR -> Write();
 
   myRootFile.Close();
 
@@ -138,7 +163,15 @@ void RecoMuonAnalysis::endJob()
   delete hGenGammaPtVsEta;
 
   delete hRecoMuPtVsEta;
+  delete hRecoGammaPtVsEta;
 
+  delete hRecoVsGenMuPt;
+  delete hRecoVsGenGammaPt;
+
+  delete hMuDeltaR;
+  delete hGammaDeltaR;
+  cout << "nPhotonsWithMuonCondition: " << nPhotonsWithMuonCondition << endl;\
+  cout << "nMuonsWithCondition: " << nMuonsWithCondition << endl;
   cout << "HERE RecoMuonAnalysis::endJob()" << endl;
 }
 
@@ -177,31 +210,70 @@ void RecoMuonAnalysis::analyze(
       }
     }
   }
+
+
   // reco muon matching
-  for (const auto& recoMu : recoMuons)
+  for (const reco::Candidate* genMu : genMuons)
   {
-    for (const reco::Candidate* genMu : genMuons)
+    float minDR = 0.01;
+    reco::Muon bestMatchedMuon;
+    bool matched = false;
+    for (const auto& recoMu : recoMuons)
     {
-      if (reco::deltaR(recoMu, *genMu) < 0.01)
+      float dR = reco::deltaR(recoMu, *genMu);
+      if (dR < 0.01 && dR < minDR)
       {
-        recoMatchedMuons.push_back(&recoMu);
-        break;
+        minDR = dR;
+        bestMatchedMuon = recoMu;
+        matched = true;
       }
+    }
+    if (matched)
+    {
+      recoMatchedMuons.push_back(&bestMatchedMuon);
+      hRecoVsGenMuPt->Fill(genMu->pt(), bestMatchedMuon.pt());
+      hMuDeltaR->Fill(minDR);
     }
   }
 
   // reco photon matching
-  for (const auto& recoPh : recoPhotons)
+  for (const reco::Candidate* genPh : genPhotons)
   {
-    for (const reco::Candidate* genPh : genPhotons)
+    float minDR = 0.01;
+    reco::Photon bestMatchedPhoton;
+    bool matched = false;
+    for (const auto& recoPh : recoPhotons)
     {
-      if (reco::deltaR(recoPh, *genPh) < 0.01)
+      float dR = reco::deltaR(recoPh, *genPh);
+      if (dR < 0.01 && dR < minDR)
       {
-        recoMatchedPhotons.push_back(&recoPh);
-        break;
+        minDR = dR;
+        bestMatchedPhoton = recoPh;
+        matched = true;
       }
     }
+    if (matched)
+    {
+      recoMatchedPhotons.push_back(&bestMatchedPhoton);
+      hRecoVsGenGammaPt->Fill(genPh->pt(), bestMatchedPhoton.pt());
+      hGammaDeltaR->Fill(minDR);
+    }
   }
+
+  
+  if(recoMatchedMuons.size() == 2 && recoMatchedPhotons.size() == 1)
+  {
+    if(recoMatchedMuons.at(0)->pt() > 4 && recoMatchedMuons.at(1)->pt() > 4 &&
+    abs(recoMatchedMuons.at(0)->eta()) < 2.4 && abs(recoMatchedMuons.at(0)->eta()) < 2.4) nPhotonsWithMuonCondition++;
+  }
+
+  if(recoMatchedMuons.size() == 2)
+  {
+    if(recoMatchedMuons.at(0)->pt() > 4 && recoMatchedMuons.at(1)->pt() > 4 &&
+    abs(recoMatchedMuons.at(0)->eta()) < 2.4 && abs(recoMatchedMuons.at(0)->eta()) < 2.4) nMuonsWithCondition++;
+  }
+
+
 
   for (const auto genMu : genMuons)
   {
@@ -217,6 +289,7 @@ void RecoMuonAnalysis::analyze(
 
   for (const auto recoMatchedMu : recoMatchedMuons)
   {
+    if (recoMatchedMu->pt() < 3) continue;
     hMuPt->Fill(recoMatchedMu->pt());
     hRecoMuPtVsEta->Fill(recoMatchedMu->pt(), recoMatchedMu->eta());
   }
@@ -224,6 +297,7 @@ void RecoMuonAnalysis::analyze(
   for (const auto recoMatchedPh : recoMatchedPhotons)
   {
     hGammaPt->Fill(recoMatchedPh->pt());
+    hRecoGammaPtVsEta->Fill(recoMatchedPh->pt(), recoMatchedPh->eta());
   }
 
 
