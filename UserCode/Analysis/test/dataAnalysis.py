@@ -14,7 +14,8 @@ process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1)
 process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(False))
 
-dataDir = '/eos/cms/store/group/phys_bphys/privateMC_ForBsMMGAnalysis/TrackingVertexing/BsToMuMuGamma_14_0_17_22_10_2024/TSG-Run3Summer22EEGS_Run2022_BsToMuMuGamma_14_0_17_22_10_2024/BsToMuMuGamma_14_0_17_22_10_2024/241022_160351/0000/'
+#dataDir = '/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToMuMuGamma_14_0_15_patch1_25_09_2024/TSG-Run3Summer22EEGS_Run2022_BsToMuMuGamma_14_0_15_patch1_25_09_2024/BsToMuMuGamma_14_0_15_patch1_25_09_2024/240925_134701/0000/'
+dataDir = 'root://cms-xrd-global.cern.ch//store/data/Run2022C/ParkingDoubleMuonLowMass0/AOD/10Dec2022-v2/2540000/'
 
 lsCommand = 'ls -1 ' + dataDir + '| grep root'
 #print('Command: ', lsCommand)
@@ -27,7 +28,14 @@ lsOutput = dir.communicate()[0]
 files = []
 for f in lsOutput.split():
     #print(dataDir + f)
-    files.append('file:' + dataDir + f)  # Full path to the files with 'file:' prefix
+    files.append(dataDir + f)  # Full path to the files with 'file:' prefix
+
+
+files = ['root://cms-xrd-global.cern.ch//store/data/Run2022C/ParkingDoubleMuonLowMass0/AOD/10Dec2022-v2/2540000/019a2652-4483-484d-9892-0887e18413ec.root',
+         'root://cms-xrd-global.cern.ch//store/data/Run2022C/ParkingDoubleMuonLowMass0/AOD/10Dec2022-v2/2540000/01da8b6d-946e-4331-9ef5-bb12e6d9a94f.root',
+         'root://cms-xrd-global.cern.ch//store/data/Run2022C/ParkingDoubleMuonLowMass0/AOD/10Dec2022-v2/2540000/02cb4e7e-bf61-4038-8ecd-223583720404.root',
+         'root://cms-xrd-global.cern.ch//store/data/Run2022C/ParkingDoubleMuonLowMass0/AOD/10Dec2022-v2/2540000/0383f1aa-aa59-4e47-abb0-3d7391213bd8.root',
+         'root://cms-xrd-global.cern.ch//store/data/Run2022C/ParkingDoubleMuonLowMass0/AOD/10Dec2022-v2/2540000/056a1f3c-8c9e-4869-b3df-51f81cc517df.root']
 
 print('Number of files: ', len(files))
 
@@ -52,11 +60,11 @@ process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1)
 process.MessageLogger.suppressWarning  = cms.untracked.vstring('Geometry','AfterSource','L1T')
 process.options = cms.untracked.PSet( wantSummary=cms.untracked.bool(False))
 
-process.analiza= cms.EDAnalyzer("RecoMuonAnalysis",
+process.analiza= cms.EDAnalyzer("DataAnalysis",
   muonSrc = cms.InputTag("slimmedMuons"),
   candidateSrc = cms.InputTag("packedPFCandidates"),
   displacedSrc = cms.InputTag("slimmedDisplacedMuons"),
-  outHist = cms.string('histos2.root')
+  outHist = cms.string('histosData.root')
 )
 
 process.MyPath = cms.Path(process.analiza)
