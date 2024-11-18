@@ -216,7 +216,7 @@ void RecoMuonAnalysis::analyze(
   for (const reco::Candidate* genMu : genMuons)
   {
     float minDR = 0.01;
-    reco::Muon bestMatchedMuon;
+    const reco::Muon* bestMatchedMuon;
     bool matched = false;
     for (const auto& recoMu : recoMuons)
     {
@@ -224,14 +224,14 @@ void RecoMuonAnalysis::analyze(
       if (dR < 0.01 && dR < minDR)
       {
         minDR = dR;
-        bestMatchedMuon = recoMu;
+        bestMatchedMuon = &recoMu;
         matched = true;
       }
     }
     if (matched)
     {
-      recoMatchedMuons.push_back(&bestMatchedMuon);
-      hRecoVsGenMuPt->Fill(genMu->pt(), bestMatchedMuon.pt());
+      recoMatchedMuons.push_back(bestMatchedMuon);
+      hRecoVsGenMuPt->Fill(genMu->pt(), bestMatchedMuon->pt());
       hMuDeltaR->Fill(minDR);
     }
   }
@@ -240,7 +240,7 @@ void RecoMuonAnalysis::analyze(
   for (const reco::Candidate* genPh : genPhotons)
   {
     float minDR = 0.01;
-    reco::Photon bestMatchedPhoton;
+    const reco::Photon* bestMatchedPhoton;
     bool matched = false;
     for (const auto& recoPh : recoPhotons)
     {
@@ -248,14 +248,14 @@ void RecoMuonAnalysis::analyze(
       if (dR < 0.01 && dR < minDR)
       {
         minDR = dR;
-        bestMatchedPhoton = recoPh;
+        bestMatchedPhoton = &recoPh;
         matched = true;
       }
     }
     if (matched)
     {
-      recoMatchedPhotons.push_back(&bestMatchedPhoton);
-      hRecoVsGenGammaPt->Fill(genPh->pt(), bestMatchedPhoton.pt());
+      recoMatchedPhotons.push_back(bestMatchedPhoton);
+      hRecoVsGenGammaPt->Fill(genPh->pt(), bestMatchedPhoton->pt());
       hGammaDeltaR->Fill(minDR);
     }
   }
@@ -287,14 +287,13 @@ void RecoMuonAnalysis::analyze(
 
 
 
-  for (const auto recoMatchedMu : recoMatchedMuons)
+  for (const reco::Muon* recoMatchedMu : recoMatchedMuons)
   {
-    if (recoMatchedMu->pt() < 3) continue;
     hMuPt->Fill(recoMatchedMu->pt());
     hRecoMuPtVsEta->Fill(recoMatchedMu->pt(), recoMatchedMu->eta());
   }
 
-  for (const auto recoMatchedPh : recoMatchedPhotons)
+  for (const reco::Photon* recoMatchedPh : recoMatchedPhotons)
   {
     hGammaPt->Fill(recoMatchedPh->pt());
     hRecoGammaPtVsEta->Fill(recoMatchedPh->pt(), recoMatchedPh->eta());
