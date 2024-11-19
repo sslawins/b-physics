@@ -16,6 +16,8 @@
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/EgammaCandidates/interface/Photon.h"
+#include "DataFormats/Common/interface/TriggerResults.h"
+#include "FWCore/Common/interface/TriggerNames.h"
 
 #include "DataFormats/Math/interface/deltaR.h"
 
@@ -58,6 +60,7 @@ private:
   edm::EDGetTokenT < vector<reco::GenParticle> > theGenParticleToken;
   edm::EDGetTokenT < vector<reco::Muon> > theMuonToken;
   edm::EDGetTokenT < vector<reco::Photon> > thePhotonToken;
+  edm::EDGetTokenT < edm::TriggerResults > theTriggerResultsToken;
 
   // histograms
   TH1D* hMuPt;
@@ -79,7 +82,7 @@ private:
 
   int nPhotonsWithMuonCondition = 0;
   int nMuonsWithCondition = 0;
-
+  int nTriggerMuMuG = 0;
 };
 
 
@@ -91,6 +94,7 @@ RecoMuonAnalysis::RecoMuonAnalysis(const edm::ParameterSet& conf)
   theGenParticleToken = consumes< vector<reco::GenParticle>  >( edm::InputTag("genParticles"));
   theMuonToken = consumes< vector<reco::Muon>  >( edm::InputTag("muons"));
   thePhotonToken = consumes< vector<reco::Photon>  >( edm::InputTag("photons"));
+  theTriggerResultsToken = consumes<edm::TriggerResults>(edm::InputTag("TriggerResults", "", "HLT"));
 
 }
 
@@ -172,6 +176,7 @@ void RecoMuonAnalysis::endJob()
   delete hGammaDeltaR;
   cout << "nPhotonsWithMuonCondition: " << nPhotonsWithMuonCondition << endl;\
   cout << "nMuonsWithCondition: " << nMuonsWithCondition << endl;
+  cout << "nTriggerMuMuG: " << nTriggerMuMuG << endl;
   cout << "HERE RecoMuonAnalysis::endJob()" << endl;
 }
 
@@ -190,6 +195,21 @@ void RecoMuonAnalysis::analyze(
 
   vector<const reco::Candidate*> genPhotons;
   vector<const reco::Photon*> recoMatchedPhotons;
+
+  const edm::TriggerResults & triggerResults = ev.get(theTriggerResultsToken);
+
+
+  edm::TriggerNames triggerNames = ev.triggerNames(triggerResults);
+
+  bool triggerFired = false;
+  for (unsigned int i = 0; i < triggerResults.size(); i++)
+  {
+    TString name = triggerNames.triggerName(i);
+    if(name == "HLT_DoubleMu4_3_Bs_v19" || name == "HLT_DoubleMu4_3_LowMass_v5" || name == "HLT_DoubleMu4_LowMass_Displaced_v5"  ||
+    name == "HLT_DoubleMu4_3_Photon4_BsToMMG_v4" || name == "HLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v4")
+    cout << "Trigger: " << name << "  " << triggerResults.accept(i) << endl;
+    if(triggerResults.accept(i)) triggerFired = true;
+  }
 
   for(const auto& genP : genPar)
   {
@@ -258,6 +278,11 @@ void RecoMuonAnalysis::analyze(
       hRecoVsGenGammaPt->Fill(genPh->pt(), bestMatchedPhoton->pt());
       hGammaDeltaR->Fill(minDR);
     }
+  }
+
+  if(recoMatchedMuons.size() == 2 && recoMatchedPhotons.size() == 1 && triggerFired)
+  {
+    nTriggerMuMuG++;
   }
 
   
