@@ -31,11 +31,7 @@ for f in lsOutput.split():
     files.append(dataDir + f)  # Full path to the files with 'file:' prefix
 
 
-files = ['root://cms-xrd-global.cern.ch//store/data/Run2022C/ParkingDoubleMuonLowMass0/AOD/10Dec2022-v2/2540000/019a2652-4483-484d-9892-0887e18413ec.root',
-         'root://cms-xrd-global.cern.ch//store/data/Run2022C/ParkingDoubleMuonLowMass0/AOD/10Dec2022-v2/2540000/01da8b6d-946e-4331-9ef5-bb12e6d9a94f.root',
-         'root://cms-xrd-global.cern.ch//store/data/Run2022C/ParkingDoubleMuonLowMass0/AOD/10Dec2022-v2/2540000/02cb4e7e-bf61-4038-8ecd-223583720404.root',
-         'root://cms-xrd-global.cern.ch//store/data/Run2022C/ParkingDoubleMuonLowMass0/AOD/10Dec2022-v2/2540000/0383f1aa-aa59-4e47-abb0-3d7391213bd8.root',
-         'root://cms-xrd-global.cern.ch//store/data/Run2022C/ParkingDoubleMuonLowMass0/AOD/10Dec2022-v2/2540000/056a1f3c-8c9e-4869-b3df-51f81cc517df.root']
+files = ['root://cms-xrd-global.cern.ch//store/data/Run2022C/ParkingDoubleMuonLowMass0/AOD/10Dec2022-v2/2540000/07e71d4d-7c8e-400b-8500-53dde9a4a700.root']
 
 print('Number of files: ', len(files))
 
@@ -44,7 +40,7 @@ print('Number of files: ', len(files))
 #process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring("file:data.root") )
 process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring(files) )
 process.source.skipEvents = cms.untracked.uint32(0)
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100000))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1))
 
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('Configuration.Geometry.GeometryDB_cff')
@@ -61,9 +57,7 @@ process.MessageLogger.suppressWarning  = cms.untracked.vstring('Geometry','After
 process.options = cms.untracked.PSet( wantSummary=cms.untracked.bool(False))
 
 process.analiza= cms.EDAnalyzer("DataAnalysis",
-  muonSrc = cms.InputTag("slimmedMuons"),
-  candidateSrc = cms.InputTag("packedPFCandidates"),
-  displacedSrc = cms.InputTag("slimmedDisplacedMuons"),
+  processName = cms.string("HLT"),
   outHist = cms.string('histosData.root')
 )
 
