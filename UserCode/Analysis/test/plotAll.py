@@ -12,4 +12,9 @@ for key in f.GetListOfKeys():
     c.Clear()
     hist = f.Get(key.GetName())
     hist.Draw()
-    c.SaveAs("Plots/" + key.GetName() + ".png")
+    if key.GetName() == "hPdgidPos" or key.GetName() == "hPdgidNeg":
+        c.SetLogy()
+    if len(sys.argv) > 2:
+        c.SaveAs(f"{sys.argv[2]}/" + key.GetName() + ".png")
+    else:
+        c.SaveAs("Plots/" + key.GetName() + ".png")
