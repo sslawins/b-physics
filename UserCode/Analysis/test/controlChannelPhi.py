@@ -18,7 +18,7 @@ process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(False))
 # Mu Mu Gamma
 #dataDir = '/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToMuMuGamma_14_0_17_22_10_2024/TSG-Run3Summer22EEGS_Run2022_BsToMuMuGamma_14_0_17_22_10_2024/BsToMuMuGamma_14_0_17_22_10_2024/241022_160351/0000/'
 #Phi Gamma
-dataDir = '/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToPhiGamma_14_0_17_20_10_2024/TSG-Run3Summer22EEGS-000_Run2022_BsToPhiGamma_14_0_17_20_10_2024/BsToPhiGamma_14_0_17_20_10_2024/241020_112334/0000/'
+dataDir = '/eos/cms/store/group/phys_bphys/privateMC_ForBsMMGAnalysis/TrackingVertexing/BsToPhiGamma_14_0_17_20_10_2024/TSG-Run3Summer22EEGS-000_Run2022_BsToPhiGamma_14_0_17_20_10_2024/BsToPhiGamma_14_0_17_20_10_2024/241020_112334/0000/'
 lsCommand = 'ls -1 ' + dataDir + '| grep root'
 #print('Command: ', lsCommand)
 
@@ -37,7 +37,7 @@ print('Number of files: ', len(files))
 #process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring("file:/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToPhiGamma_14_0_17_20_10_2024/TSG-Run3Summer22EEGS-000_Run2022_BsToPhiGamma_14_0_17_20_10_2024/BsToPhiGamma_14_0_17_20_10_2024/241020_112334/0000/private_BsToPhiGamma_Run3Summer22EEGS_999.root") )
 process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring(files) )
 process.source.skipEvents = cms.untracked.uint32(0)
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(640368))
 
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('Configuration.Geometry.GeometryDB_cff')
