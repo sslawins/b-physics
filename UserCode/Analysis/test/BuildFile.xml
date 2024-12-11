@@ -44,3 +44,11 @@
 <library   file="VertexFitting.cc" name="VertexFitting">
   <flags   EDM_PLUGIN="1"/>
 </library>
+
+<library   file="TriggerAnalysis.cc" name="TriggerAnalysis">
+  <flags   EDM_PLUGIN="1"/>
+</library>
+
+<library   file="MiniaodAnalysis.cc" name="MiniaodAnalysis">
+  <flags   EDM_PLUGIN="1"/>
+</library>
