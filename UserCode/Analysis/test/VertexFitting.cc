@@ -77,6 +77,7 @@ private:
   // histograms
   TH1D* hFittedVsGenVertexDistance;
   TH1D* hDistanceToPV;
+  TH1D* hDistanceToPVxy;
 
   std::vector<int> MuMuG = {22, 13, -13};
 
@@ -116,8 +117,9 @@ bool VertexFitting::isSameDecay(const std::vector<int>& dec1, const std::vector<
 void VertexFitting::beginJob()
 {
   //create a histogram
-  hFittedVsGenVertexDistance = new TH1D("hFittedVsGenVertexDistance", "hFittedVsGenVertexDistance", 100, 0, 1);
+  hFittedVsGenVertexDistance = new TH1D("hFittedVsGenVertexDistance", "hFittedVsGenVertexDistance", 100, 0, 0.5);
   hDistanceToPV = new TH1D("hDistanceToPV", "hDistanceToPV", 100, 0, 10);
+  hDistanceToPVxy = new TH1D("hDistanceToPVxy", "hDistanceToPVxy", 100, 0, 1);
 
   cout << "HERE VertexFitting::beginJob()" << endl;
 }
@@ -130,11 +132,13 @@ void VertexFitting::endJob()
   //write histogram data
   hFittedVsGenVertexDistance->Write();
   hDistanceToPV->Write();
+  hDistanceToPVxy->Write();
 
   myRootFile.Close();
 
   delete hFittedVsGenVertexDistance;
   delete hDistanceToPV;
+  delete hDistanceToPVxy;
 
   cout << "HERE VertexFitting::endJob()" << endl;
 }
@@ -160,7 +164,7 @@ void VertexFitting::analyze(
 
   const auto & trackBuilder = es.getData(theTrackBuilderToken);
 
-  reco::Candidate::Point genBsPoint;
+  reco::Candidate::Point genBsDecayPoint;
 
   for(const auto& genP : genPar)
   {
@@ -173,7 +177,6 @@ void VertexFitting::analyze(
       }
       if(isSameDecay(daughters, MuMuG))
       {
-        genBsPoint = genP.vertex();
         for(unsigned int i=0; i < genP.numberOfDaughters(); i++)
         {
           if(abs(genP.daughter(i)->pdgId()) == 13) genMuons.push_back(genP.daughter(i));
@@ -228,6 +231,8 @@ void VertexFitting::analyze(
       genMatchedPhotons.push_back(genPh);
     }
   }
+
+  genBsDecayPoint = genMuons[0]->vertex();
   // vertex fitting
 
   vector<reco::TransientTrack> muonTTs;
@@ -246,9 +251,10 @@ void VertexFitting::analyze(
 
     auto fittedPoint = muonVertex.position();
 
-    cout << "genBsPoint: " << genBsPoint << " fittedPoint: " << fittedPoint << endl;
-    hFittedVsGenVertexDistance->Fill((fittedPoint - genBsPoint).R());
+    cout << "genBsDecayPoint: " << genBsDecayPoint << " fittedPoint: " << fittedPoint << endl;
+    hFittedVsGenVertexDistance->Fill((fittedPoint - genBsDecayPoint).R());
     hDistanceToPV->Fill(muonVertex.position().R());
+    hDistanceToPVxy->Fill(sqrt(pow(muonVertex.position().x(), 2) + pow(muonVertex.position().y(), 2)));
   }
 
   cout <<"*** Analyze event: " << ev.id() <<" analysed event count:" << ++theEventCount << endl;
