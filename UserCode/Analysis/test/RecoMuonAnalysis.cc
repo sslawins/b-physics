@@ -65,8 +65,8 @@ private:
   // histograms
   TH1D* hBs0Pt;
 
-  TH1D* hMuPt;
-  TH1D* hGammaPt;
+  TH1D* hRecoMuPt;
+  TH1D* hRecoGammaPt;
 
   TH1D* hGenMuPt;
   TH1D* hRecoMuWithMuonConditionPt;
@@ -99,11 +99,20 @@ private:
 
   TH1D* BsInvMass;
 
+  TH1D* hHLT_DoubleMu4_3_Bs_v15;
+  TH1D* hHLT_DoubleMu4_3_LowMass_v1;
+  TH1D* hHLT_DoubleMu4_LowMass_Displaced_v1;
+  TH1D* hHLT_DoubleMu4_3_Photon4_BsToMMG_v1;
+  TH1D* hHLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v1;
+
+
   std::vector<int> MuMuG = {22, 13, -13};
 
   int nPhotonsWithMuonCondition = 0;
   int nMuonsWithCondition = 0;
   int nTriggerMuMuG = 0;
+
+  TH1D* hTrigger;
 };
 
 
@@ -115,7 +124,7 @@ RecoMuonAnalysis::RecoMuonAnalysis(const edm::ParameterSet& conf)
   theGenParticleToken = consumes< vector<reco::GenParticle>  >( edm::InputTag("genParticles"));
   theMuonToken = consumes< vector<reco::Muon>  >( edm::InputTag("muons"));
   thePhotonToken = consumes< vector<reco::Photon>  >( edm::InputTag("photons"));
-  //theTriggerResultsToken = consumes<edm::TriggerResults>(edm::InputTag("TriggerResults", "", "HLT"));
+  theTriggerResultsToken = consumes<edm::TriggerResults>(edm::InputTag("TriggerResults", "", "HLT"));
 
 }
 
@@ -142,28 +151,28 @@ void RecoMuonAnalysis::beginJob()
   //create a histogram
   hBs0Pt = new TH1D("Bs0Pt", "Bs0 pT; pT [GeV]; counts", 1000, 0, 100);
 
-  hMuPt = new TH1D("hRecoMuPt", "reco muon pT; pT [GeV]; counts", 100, 0, 30);
-  hGammaPt = new TH1D("hRecoGammaPt", "reco photon pT; pT [GeV]; counts", 100, 0, 30);
+  hRecoMuPt = new TH1D("hRecoMuPt", "reco muon pT; pT [GeV]; counts", 500, 0, 30);
+  hRecoGammaPt = new TH1D("hRecoGammaPt", "reco photon pT; pT [GeV]; counts", 500, 0, 30);
 
   hGenMuPt = new TH1D("hGenMuPt", "gen muon pT; pT [GeV]; counts", 500, 0, 30);
   hRecoMuWithMuonConditionPt = new TH1D("hRecoMuWithMuonConditionPt", "reco muon with #mu pT > 4 |#eta| < 2.4; pT [GeV]; counts", 500, 0, 30);
   hRecoVsGenMuPtWithMuonCondition = new TH2D("hRecoVsGenMuPtWithMuonCondition", "reco vs gen muon with #mu pT > 4 |#eta| < 2.4; gen pT [GeV]; reco pT [GeV]", 500, 0, 30, 500, 0, 30);
 
-  hGenMuPtVsEta = new TH2D("hGenMuPtVsEta", "gen muon pT vs eta; pT [GeV]; eta", 100, 0, 30, 100, -3, 3);
-  hGenGammaPtVsEta = new TH2D("hGenGammaPtVsEta", "gen photon pT vs eta; pT [GeV]; eta", 500, 0, 30, 1000, -10, 10);
+  hGenMuPtVsEta = new TH2D("hGenMuPtVsEta", "gen muon pT vs eta; pT [GeV]; #eta", 500, 0, 30, 1000, -10, 10);
+  hGenGammaPtVsEta = new TH2D("hGenGammaPtVsEta", "gen photon pT vs eta; pT [GeV]; #eta", 500, 0, 30, 1000, -10, 10);
 
-  hRecoMuPtVsEta = new TH2D("hRecoMuPtVsEta", "reco muon pT vs eta; pT [GeV]; eta", 100, 0, 30, 100, -3, 3);
-  hRecoGammaPtVsEta = new TH2D("hRecoGammaPtVsEta", "reco photon pT vs eta; pT [GeV]; eta", 100, 0, 30, 100, -3, 3);
+  hRecoMuPtVsEta = new TH2D("hRecoMuPtVsEta", "reco muon pT vs eta; pT [GeV]; #eta", 500, 0, 30, 1000, -10, 10);
+  hRecoGammaPtVsEta = new TH2D("hRecoGammaPtVsEta", "reco photon pT vs eta; pT [GeV]; #eta", 500, 0, 30, 1000, -10, 10);
 
-  hRecoVsGenMuPt = new TH2D("hRecoVsGenMuPt", "reco vs gen muon pT; gen pT [GeV]; reco pT [GeV]", 100, 0, 30, 100, 0, 30);
-  hRecoVsGenGammaPt = new TH2D("hRecoVsGenGammaPt", "reco vs gen photon pT; gen pT [GeV]; reco pT [GeV]", 100, 0, 30, 100, 0, 30);
+  hRecoVsGenMuPt = new TH2D("hRecoVsGenMuPt", "reco vs gen muon pT; gen pT [GeV]; reco pT [GeV]", 500, 0, 30, 500, 0, 30);
+  hRecoVsGenGammaPt = new TH2D("hRecoVsGenGammaPt", "reco vs gen photon pT; gen pT [GeV]; reco pT [GeV]", 500, 0, 30, 500, 0, 30);
 
   hMuPtError = new TH1D("hMuPtError", "reco muon pT error; pT error [GeV]; counts", 100, -1, 1);
   hGammaPtError = new TH1D("hGammaPtError", "reco photon pT error; pT error [GeV]; counts", 100, -1, 1);
 
-  hMuDeltaR = new TH1D("hMuDeltaR", "reco muon deltaR; deltaR; counts", 1000, 0, 0.1);
-  hGammaDeltaR = new TH1D("hGammaDeltaR", "reco photon deltaR; deltaR; counts", 1000, 0, 0.1);
-  hMu1VsMu2DeltaR = new TH1D("hMu1VsMu2DeltaR", "reco muon1 vs muon2 deltaR; deltaR; counts", 1000, 0, 10);
+  hMuDeltaR = new TH1D("hMuDeltaR", "reco muon deltaR; #DeltaR; counts", 1000, 0, 0.1);
+  hGammaDeltaR = new TH1D("hGammaDeltaR", "reco photon deltaR; #DeltaR; counts", 1000, 0, 0.1);
+  hMu1VsMu2DeltaR = new TH1D("hMu1VsMu2DeltaR", "reco muon1 vs muon2 deltaR; #DeltaR; counts", 1000, 0, 10);
 
   hGammaWithMuonConditionPt = new TH1D("hGammaWithMuonConditionPt", "gen #gamma with #mu pT > 4 |#eta| < 2.4; pT [GeV]; counts", 500, 0, 30);
   hMatchedGammaWithMuonConditionPt = new TH1D("hMatchedGammaWithMuonConditionPt", "matched gen #gamma with #mu pT > 4 |#eta| < 2.4; pT [GeV]; counts", 500, 0, 30);
@@ -171,10 +180,16 @@ void RecoMuonAnalysis::beginJob()
   
   hRecoVsGenGammaWithMuonConditionPt = new TH2D("hRecoVsGenGammaWithMuonConditionPt", "reco vs gen #gamma with #mu pT > 4 |#eta| < 2.4; gen pT [GeV]; reco pT [GeV]", 500, 0, 30, 500, 0, 30);
 
-  hGammaWithMuonConditionPtVsEta = new TH2D("hGammaWithMuonConditionPtVsEta", "gen #gamma with #mu pT > 4 |#eta| < 2.4; pT [GeV]; eta", 100, 0, 30, 100, -3, 3);
-  hMatchedGammaWithMuonConditionPtVsEta = new TH2D("hMatchedGammaWithMuonConditionPtVsEta", "matched gen #gamma with #mu pT > 4 |#eta| < 2.4; pT [GeV]; eta", 100, 0, 30, 100, -3, 3);
+  hGammaWithMuonConditionPtVsEta = new TH2D("hGammaWithMuonConditionPtVsEta", "gen #gamma with #mu pT > 4 |#eta| < 2.4; pT [GeV]; #eta", 500, 0, 30, 1000, -10, 10);
+  hMatchedGammaWithMuonConditionPtVsEta = new TH2D("hMatchedGammaWithMuonConditionPtVsEta", "matched gen #gamma with #mu pT > 4 |#eta| < 2.4; pT [GeV]; #eta", 500, 0, 30, 1000, -10, 10);
 
   BsInvMass = new TH1D("BsInvMass", "Bs invariant mass; mass [GeV]; counts", 48, 5, 6.2);
+
+  hHLT_DoubleMu4_3_Bs_v15 = new TH1D("hHLT_DoubleMu4_3_Bs_v15", "HLT_DoubleMu4_3_Bs_v15; pT [GeV]; counts", 100, 0, 30);
+  hHLT_DoubleMu4_3_LowMass_v1 = new TH1D("hHLT_DoubleMu4_3_LowMass_v1", "HLT_DoubleMu4_3_LowMass_v1; pT [GeV]; counts", 100, 0, 30);
+  hHLT_DoubleMu4_LowMass_Displaced_v1 = new TH1D("hHLT_DoubleMu4_LowMass_Displaced_v1", "HLT_DoubleMu4_LowMass_Displaced_v1; pT [GeV]; counts", 100, 0, 30);
+  hHLT_DoubleMu4_3_Photon4_BsToMMG_v1 = new TH1D("hHLT_DoubleMu4_3_Photon4_BsToMMG_v1", "HLT_DoubleMu4_3_Photon4_BsToMMG_v1; pT [GeV]; counts", 100, 0, 30);
+  hHLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v1 = new TH1D("hHLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v1", "HLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v1; pT [GeV]; counts", 100, 0, 30);
 
   cout << "HERE RecoMuonAnalysis::beginJob()" << endl;
 }
@@ -187,8 +202,8 @@ void RecoMuonAnalysis::endJob()
   //write histogram data
   hBs0Pt -> Write();
 
-  hMuPt -> Write();
-  hGammaPt -> Write();
+  hRecoMuPt -> Write();
+  hRecoGammaPt -> Write();
 
   hGenMuPt -> Write();
   hRecoMuWithMuonConditionPt -> Write();
@@ -222,12 +237,18 @@ void RecoMuonAnalysis::endJob()
 
   BsInvMass -> Write();
 
+  hHLT_DoubleMu4_3_Bs_v15 -> Write();
+  hHLT_DoubleMu4_3_LowMass_v1 -> Write();
+  hHLT_DoubleMu4_LowMass_Displaced_v1 -> Write();
+  hHLT_DoubleMu4_3_Photon4_BsToMMG_v1 -> Write();
+  hHLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v1 -> Write();
+
   myRootFile.Close();
 
   delete hBs0Pt;
 
-  delete hMuPt;
-  delete hGammaPt;
+  delete hRecoMuPt;
+  delete hRecoGammaPt;
 
   delete hGenMuPt;
   delete hRecoMuWithMuonConditionPt;
@@ -260,6 +281,12 @@ void RecoMuonAnalysis::endJob()
 
   delete BsInvMass;
 
+  delete hHLT_DoubleMu4_3_Bs_v15;
+  delete hHLT_DoubleMu4_3_LowMass_v1;
+  delete hHLT_DoubleMu4_LowMass_Displaced_v1;
+  delete hHLT_DoubleMu4_3_Photon4_BsToMMG_v1;
+  delete hHLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v1;
+
   cout << "nPhotonsWithMuonCondition: " << nPhotonsWithMuonCondition << endl;\
   cout << "nMuonsWithCondition: " << nMuonsWithCondition << endl;
   cout << "nTriggerMuMuG: " << nTriggerMuMuG << endl;
@@ -283,20 +310,6 @@ void RecoMuonAnalysis::analyze(
   vector<const reco::Candidate*> genPhotons;
   vector<const reco::Photon*> recoMatchedPhotons;
   vector<const reco::Candidate*> genMatchedPhotons;
-
-  // trigger info
-  // const edm::TriggerResults & triggerResults = ev.get(theTriggerResultsToken);
-  // edm::TriggerNames triggerNames = ev.triggerNames(triggerResults);
-
-  // bool triggerFired = false;
-  // for (unsigned int i = 0; i < triggerResults.size(); i++)
-  // {
-  //   TString name = triggerNames.triggerName(i);
-  //   if(name == "HLT_DoubleMu4_3_Bs_v19" || name == "HLT_DoubleMu4_3_LowMass_v5" || name == "HLT_DoubleMu4_LowMass_Displaced_v5"  ||
-  //   name == "HLT_DoubleMu4_3_Photon4_BsToMMG_v4" || name == "HLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v4")
-  //   cout << "Trigger: " << name << "  " << triggerResults.accept(i) << endl;
-  //   if(triggerResults.accept(i)) triggerFired = true;
-  // }
 
   for(const auto& genP : genPar)
   {
@@ -365,7 +378,7 @@ void RecoMuonAnalysis::analyze(
       }
     }
     if (matched) hGammaDeltaR->Fill(minDR);
-    if (matched && minDR < 0.03)
+    if (matched && minDR < 0.02)
     {
       recoMatchedPhotons.push_back(bestMatchedPhoton);
       genMatchedPhotons.push_back(genPh);
@@ -374,11 +387,58 @@ void RecoMuonAnalysis::analyze(
     }
   }
 
-  // if(recoMatchedMuons.size() == 2 && recoMatchedPhotons.size() == 1 && triggerFired)
-  // {
-  //   nTriggerMuMuG++;
-  // }
+  // trigger info
+  // const edm::TriggerResults & triggerResults = ev.get(theTriggerResultsToken);
+  // edm::TriggerNames triggerNames = ev.triggerNames(triggerResults);
 
+  // bool triggerFired = false;
+  // for (unsigned int i = 0; i < triggerResults.size(); i++)
+  // {
+  //   TString name = triggerNames.triggerName(i);
+  //   if(name == "HLT_DoubleMu4_3_Bs_v15" || name == "HLT_DoubleMu4_3_LowMass_v1" || name == "HLT_DoubleMu4_LowMass_Displaced_v1"  ||
+  //   name == "HLT_DoubleMu4_3_Photon4_BsToMMG_v1" || name == "HLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v1")
+  //   {
+  //     cout << "Trigger: " << name << "  " << triggerResults.accept(i) << endl;
+  //     if(triggerResults.accept(i)) triggerFired = true;
+  //   }
+
+  //   if(name == "HLT_DoubleMu4_3_Bs_v15" && triggerResults.accept(i) == 1)
+  //   {
+  //     for(const auto recoMatchedMu : recoMatchedMuons)
+  //     {
+  //       if(recoMatchedMu->charge() > 0) {hHLT_DoubleMu4_3_Bs_v15->Fill(recoMatchedMu->pt()); cout << "Filling" << endl;}
+  //     }
+  //   }
+  //   if(name == "HLT_DoubleMu4_3_LowMass_v1" && triggerResults.accept(i) == 1)
+  //   {
+  //     for(const auto recoMatchedMu : recoMatchedMuons)
+  //     {
+  //       if(recoMatchedMu->charge() > 0) hHLT_DoubleMu4_3_LowMass_v1->Fill(recoMatchedMu->pt());
+  //     }
+  //   }
+  //   if(name == "HLT_DoubleMu4_LowMass_Displaced_v1" && triggerResults.accept(i) == 1)
+  //   {
+  //     for(const auto recoMatchedMu : recoMatchedMuons)
+  //     {
+  //       if(recoMatchedMu->charge() > 0) hHLT_DoubleMu4_LowMass_Displaced_v1->Fill(recoMatchedMu->pt());
+  //     }
+  //   }
+  //   if(name == "HLT_DoubleMu4_3_Photon4_BsToMMG_v1" && triggerResults.accept(i) == 1)
+  //   {
+  //     for(const auto recoMatchedMu : recoMatchedMuons)
+  //     {
+  //       if(recoMatchedMu->charge() > 0) hHLT_DoubleMu4_3_Photon4_BsToMMG_v1->Fill(recoMatchedMu->pt());
+  //     }
+  //   }
+  //   if(name == "HLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v1" && triggerResults.accept(i) == 1)
+  //   {
+  //     for(const auto recoMatchedMu : recoMatchedMuons)
+  //     {
+  //       if(recoMatchedMu->charge() > 0) hHLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v1->Fill(recoMatchedMu->pt());
+  //     }
+  //   }
+  // }
+  // if(triggerFired) nTriggerMuMuG++;
   
   if(recoMatchedMuons.size() == 2 && recoMatchedPhotons.size() == 1)
   {
@@ -443,13 +503,13 @@ void RecoMuonAnalysis::analyze(
 
   for (const reco::Muon* recoMatchedMu : recoMatchedMuons)
   {
-    hMuPt->Fill(recoMatchedMu->pt());
+    hRecoMuPt->Fill(recoMatchedMu->pt());
     hRecoMuPtVsEta->Fill(recoMatchedMu->pt(), recoMatchedMu->eta());
   }
 
   for (const reco::Photon* recoMatchedPh : recoMatchedPhotons)
   {
-    hGammaPt->Fill(recoMatchedPh->pt());
+    hRecoGammaPt->Fill(recoMatchedPh->pt());
     hRecoGammaPtVsEta->Fill(recoMatchedPh->pt(), recoMatchedPh->eta());
   }
 
