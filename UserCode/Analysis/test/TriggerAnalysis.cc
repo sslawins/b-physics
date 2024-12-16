@@ -77,6 +77,8 @@ private:
 
   TH1D* hMuPtWithRecoPhoton;
 
+  TH2D* hMuPtVsEtaWithMuonConditionWithoutTrigger;
+
   std::vector<int> MuMuG = {22, 13, -13};
 
   int nPhotonsWithMuonCondition = 0;
@@ -98,6 +100,8 @@ private:
   int nHLT_DoubleMu4_LowMass_Displaced_v1_RecoPhoton = 0;
   int nHLT_DoubleMu4_3_Photon4_BsToMMG_v1_RecoPhoton = 0;
   int nHLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v1_RecoPhoton = 0;
+
+  int nPhotonsWithMuonConditionWithoutTrigger = 0;
 
 };
 
@@ -146,6 +150,8 @@ void TriggerAnalysis::beginJob()
 
   hMuPtWithRecoPhoton = new TH1D("hMuPtWithRecoPhoton", "Muon pT with reco photon; pT [GeV]; counts", 100, 0, 30);
 
+  hMuPtVsEtaWithMuonConditionWithoutTrigger = new TH2D("hMuPtVsEtaWithMuonConditionWithoutTrigger", "Muon pT vs Eta with muon condition without trigger; pT [GeV]; Eta", 100, 0, 30, 100, -3, 3);
+
 
   cout << "HERE TriggerAnalysis::beginJob()" << endl;
 }
@@ -168,6 +174,8 @@ void TriggerAnalysis::endJob()
 
   hMuPtWithRecoPhoton -> Write();
 
+  hMuPtVsEtaWithMuonConditionWithoutTrigger -> Write();
+
   myRootFile.Close();
 
   delete hHLT_DoubleMu4_3_Bs_v15;
@@ -180,6 +188,8 @@ void TriggerAnalysis::endJob()
   delete hMuPtVsEta;
 
   delete hMuPtWithRecoPhoton;
+
+  delete hMuPtVsEtaWithMuonConditionWithoutTrigger;
 
   cout << "nPhotonsWithMuonCondition: " << nPhotonsWithMuonCondition << endl;\
   cout << "nMuonsWithCondition: " << nMuonsWithCondition << endl;
@@ -201,6 +211,7 @@ void TriggerAnalysis::endJob()
   cout << "nHLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v1_RecoPhoton: " << nHLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v1_RecoPhoton << endl << endl;
 
   cout << "nHLT_DoubleMu4_3_LowMass_v1_WithRecoMuons: " << nHLT_DoubleMu4_3_LowMass_v1_WithRecoMuons << endl;
+  cout << "nPhotonsWithMuonConditionWithoutTrigger: " << nPhotonsWithMuonConditionWithoutTrigger << endl;
 
   cout << "HERE TriggerAnalysis::endJob()" << endl;
 }
@@ -323,7 +334,7 @@ void TriggerAnalysis::analyze(
   const edm::TriggerResults & triggerResults = ev.get(theTriggerResultsToken);
   edm::TriggerNames triggerNames = ev.triggerNames(triggerResults);
 
-  // for (unsigned int i = 0; i < triggerResults.size(); i++) cout << triggerNames.triggerName(i) << endl;
+  for (unsigned int i = 0; i < triggerResults.size(); i++) cout << triggerNames.triggerName(i) << endl;
 
   bool triggerFired = false;
   for (unsigned int i = 0; i < triggerResults.size(); i++)
@@ -356,6 +367,21 @@ void TriggerAnalysis::analyze(
         hMuPtVsEtaWithTrigger->Fill(recoMatchedMu->pt(), recoMatchedMu->eta());
       }
     }
+
+    if(recoMatchedMuons.size() == 2)
+    {
+      if(recoMatchedMuons.at(0)->pt() > 4 && recoMatchedMuons.at(1)->pt() > 4 &&
+      abs(recoMatchedMuons.at(0)->eta()) < 2.4 && abs(recoMatchedMuons.at(0)->eta()) < 2.4)
+      {
+        if(name == "HLT_DoubleMu4_3_LowMass_v1" && triggerResults.accept(i) != 1)
+        {
+          hMuPtVsEtaWithMuonConditionWithoutTrigger->Fill(recoMatchedMuons.at(0)->pt(), recoMatchedMuons.at(0)->eta());
+          if (recoMatchedPhotons.size() > 0) nPhotonsWithMuonConditionWithoutTrigger++;
+        }
+      }
+    }
+
+
     if(name == "HLT_DoubleMu4_LowMass_Displaced_v1" && triggerResults.accept(i) == 1)
     {
       nHLT_DoubleMu4_LowMass_Displaced_v1++;
