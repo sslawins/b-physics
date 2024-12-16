@@ -52,3 +52,11 @@
 <library   file="MiniaodAnalysis.cc" name="MiniaodAnalysis">
   <flags   EDM_PLUGIN="1"/>
 </library>
+
+<library   file="EventCounter.cc" name="EventCounter">
+  <flags   EDM_PLUGIN="1"/>
+</library>
+
+<library   file="ConvertedPhotons.cc" name="ConvertedPhotons">
+  <flags   EDM_PLUGIN="1"/>
+</library>
