@@ -30,6 +30,7 @@
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
 #include "DataFormats/Candidate/interface/VertexCompositePtrCandidate.h"
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
 
 #include "TH1D.h"
@@ -71,6 +72,9 @@ private:
   edm::EDGetTokenT < vector<reco::GenParticle> > theGenParticleToken;
   edm::EDGetTokenT < vector<reco::Muon> > theMuonToken;
   edm::EDGetTokenT < vector<reco::Photon> > thePhotonToken;
+  edm::EDGetTokenT < reco::BeamSpot > theBeamSpotToken;
+  edm::EDGetTokenT < vector<reco::Vertex> > theVertexToken;
+
 
   edm::ESGetToken<TransientTrackBuilder, TransientTrackRecord> theTrackBuilderToken;
 
@@ -78,6 +82,8 @@ private:
   TH1D* hFittedVsGenVertexDistance;
   TH1D* hDistanceToPV;
   TH1D* hDistanceToPVxy;
+
+  TH1D* pvMultiplicity;
 
   std::vector<int> MuMuG = {22, 13, -13};
 
@@ -92,6 +98,9 @@ VertexFitting::VertexFitting(const edm::ParameterSet& conf)
   theGenParticleToken = consumes< vector<reco::GenParticle>  >( edm::InputTag("genParticles"));
   theMuonToken = consumes< vector<reco::Muon>  >( edm::InputTag("muons"));
   thePhotonToken = consumes< vector<reco::Photon>  >( edm::InputTag("photons"));
+  theBeamSpotToken = consumes< reco::BeamSpot >( edm::InputTag("offlineBeamSpot"));
+  theVertexToken = consumes< vector<reco::Vertex>  >( edm::InputTag("offlinePrimaryVertices"));
+
 
   theTrackBuilderToken = esConsumes(edm::ESInputTag("", "TransientTrackBuilder"));
 }
@@ -118,8 +127,10 @@ void VertexFitting::beginJob()
 {
   //create a histogram
   hFittedVsGenVertexDistance = new TH1D("hFittedVsGenVertexDistance", "hFittedVsGenVertexDistance", 100, 0, 0.5);
-  hDistanceToPV = new TH1D("hDistanceToPV", "hDistanceToPV", 100, 0, 10);
+  hDistanceToPV = new TH1D("hDistanceToPV", "hDistanceToPV", 100, 0, 1);
   hDistanceToPVxy = new TH1D("hDistanceToPVxy", "hDistanceToPVxy", 100, 0, 1);
+
+  pvMultiplicity = new TH1D("pvMultiplicity", "pvMultiplicity", 10, 0, 10);
 
   cout << "HERE VertexFitting::beginJob()" << endl;
 }
@@ -134,11 +145,15 @@ void VertexFitting::endJob()
   hDistanceToPV->Write();
   hDistanceToPVxy->Write();
 
+  pvMultiplicity->Write();
+
   myRootFile.Close();
 
   delete hFittedVsGenVertexDistance;
   delete hDistanceToPV;
   delete hDistanceToPVxy;
+
+  delete pvMultiplicity;
 
   cout << "HERE VertexFitting::endJob()" << endl;
 }
@@ -152,6 +167,11 @@ void VertexFitting::analyze(
   const std::vector<reco::GenParticle> & genPar = ev.get(theGenParticleToken);
   const std::vector<reco::Muon> & recoMuons = ev.get(theMuonToken);
   const std::vector<reco::Photon> & recoPhotons = ev.get(thePhotonToken);
+  const reco::BeamSpot & beamSpot = ev.get(theBeamSpotToken);
+  const std::vector<reco::Vertex> & primaryVertices = ev.get(theVertexToken);
+
+
+  pvMultiplicity->Fill(primaryVertices.size());
 
 
   vector<const reco::Candidate*> genMuons;
@@ -165,6 +185,8 @@ void VertexFitting::analyze(
   const auto & trackBuilder = es.getData(theTrackBuilderToken);
 
   reco::Candidate::Point genBsDecayPoint;
+  reco::Candidate::Point genBsBirthPoint;
+  reco::Candidate::Point beamSpotPoint = beamSpot.position();
 
   for(const auto& genP : genPar)
   {
@@ -177,6 +199,7 @@ void VertexFitting::analyze(
       }
       if(isSameDecay(daughters, MuMuG))
       {
+        genBsBirthPoint = genP.vertex();
         for(unsigned int i=0; i < genP.numberOfDaughters(); i++)
         {
           if(abs(genP.daughter(i)->pdgId()) == 13) genMuons.push_back(genP.daughter(i));
@@ -253,8 +276,8 @@ void VertexFitting::analyze(
 
     cout << "genBsDecayPoint: " << genBsDecayPoint << " fittedPoint: " << fittedPoint << endl;
     hFittedVsGenVertexDistance->Fill((fittedPoint - genBsDecayPoint).R());
-    hDistanceToPV->Fill(muonVertex.position().R());
-    hDistanceToPVxy->Fill(sqrt(pow(muonVertex.position().x(), 2) + pow(muonVertex.position().y(), 2)));
+    hDistanceToPV->Fill((fittedPoint - primaryVertices.at(0).position()).R());
+    hDistanceToPVxy->Fill((fittedPoint - beamSpotPoint).Rho());
   }
 
   cout <<"*** Analyze event: " << ev.id() <<" analysed event count:" << ++theEventCount << endl;
