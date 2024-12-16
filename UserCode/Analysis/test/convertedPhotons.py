@@ -35,7 +35,7 @@ print('Number of files: ', len(files))
 # process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring("file:") )
 process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring(files) )
 process.source.skipEvents = cms.untracked.uint32(0)
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10000))
 
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('Configuration.Geometry.GeometryDB_cff')
@@ -64,12 +64,10 @@ process.analiza= cms.EDAnalyzer("ConvertedPhotons",
   convertedPhotons = cms.InputTag("oniaPhotonCandidates","conversions")
 )
 
-process.out = cms.OutputModule("PoolOutputModule",
-    fileName = cms.untracked.string("test2.root")
-)
+# process.out = cms.OutputModule("PoolOutputModule", fileName = cms.untracked.string("test2.root"))
 
-process.MyPath = cms.Path(process.oniaPhotonCandidates)
+process.MyPath = cms.Path(process.oniaPhotonCandidates*process.analiza)
 #process.schedule = cms.Schedule(process.MyPath)
 
-process.outpath = cms.EndPath(process.out)
+#process.outpath = cms.EndPath(process.out)
 print("All files set for analysis.")

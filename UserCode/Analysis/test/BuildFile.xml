@@ -20,6 +20,10 @@
 <use   name="TrackingTools/Records"/>
 <use   name="RecoVertex/VertexPrimitives"/>
 <use   name="RecoVertex/KalmanVertexFit"/>
+<use   name="RecoVertex/KinematicFit"/>
+<use   name="RecoVertex/KinematicFitPrimitives"/>
+<use   name="MagneticField/Engine"/>
+<use   name="MagneticField/Records"/>
 
 <use   name="clhep"/>
 <use   name="hepmc"/>
