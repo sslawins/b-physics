@@ -16,6 +16,7 @@ process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1)
 process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(False))
 
 dataDir = '/eos/cms/store/group/phys_bphys/privateMC_ForBsMMGAnalysis/TrackingVertexing/Private_BsToMuMuGamma_MCTunesRun3ECM13p6TeV/BsToMuMuGamma_CMSSW_12_4_11_patch3_14_12_2024/241214_121515/0000/'
+# dataDir = '/eos/cms/store/group/phys_bphys/privateMC_ForBsMMGAnalysis/TrackingVertexing/Private_Pi0ToGammaGamma_Pi0PythiaGun/Pi0ToGammaGamma_CMSSW_12_4_11_patch3_12_12_2024/241212_131944/0000/'
 
 lsCommand = 'ls -1 ' + dataDir + '| grep root'
 #print('Command: ', lsCommand)
@@ -35,7 +36,9 @@ print('Number of files: ', len(files))
 # process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring("file:") )
 process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring(files) )
 process.source.skipEvents = cms.untracked.uint32(0)
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10000))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000))
+
+process.load("TrackingTools/TransientTrack/TransientTrackBuilder_cfi")
 
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('Configuration.Geometry.GeometryDB_cff')
