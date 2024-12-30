@@ -36,7 +36,7 @@ print('Number of files: ', len(files))
 # process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring("file:") )
 process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring(files) )
 process.source.skipEvents = cms.untracked.uint32(0)
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100000))
 
 process.load("TrackingTools/TransientTrack/TransientTrackBuilder_cfi")
 
@@ -47,7 +47,8 @@ process.load("Configuration.StandardSequences.Reconstruction_cff")
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run3_data', '')
+# process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run3_data', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run3_mc_FULL','')
 
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1)
