@@ -35,6 +35,8 @@
 #include "RecoVertex/KinematicFit/interface/MultiTrackMassKinematicConstraint.h"
 #include "RecoVertex/KinematicFit/interface/KinematicConstrainedVertexFitter.h"
 
+#include "DataFormats/GeometryVector/interface/GlobalVector.h"
+
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 
@@ -80,6 +82,7 @@ private:
   edm::EDGetTokenT < vector<reco::Photon> > thePhotonToken;
   edm::EDGetTokenT < vector<pat::CompositeCandidate> > theConversionsToken;
   edm::ESGetToken<MagneticField, IdealMagneticFieldRecord> m_fieldToken;
+  edm::EDGetTokenT < edm::TriggerResults > theTriggerResultsToken;
 
   // histograms
   TH1D* nConvertedPhotons;
@@ -87,6 +90,8 @@ private:
   TH1D* hBsMass;
   TH1D* hMuPt;
   TH1D* hGammaPt;
+  TH1D* hGammaDeltaR;
+  TH1D* hGammaPtWithTrigger;
 
 
   int nConvPhotons = 0;
@@ -104,6 +109,8 @@ ConvertedPhotons::ConvertedPhotons(const edm::ParameterSet& conf)
   thePhotonToken = consumes< vector<reco::Photon>  >( edm::InputTag("photons"));
   theConversionsToken = consumes< vector<pat::CompositeCandidate> >( edm::InputTag("oniaPhotonCandidates","conversions"));
   m_fieldToken = esConsumes<MagneticField, IdealMagneticFieldRecord>();
+  theTriggerResultsToken = consumes<edm::TriggerResults>(edm::InputTag("TriggerResults", "", "HLT"));
+
 }
 
 ConvertedPhotons::~ConvertedPhotons()
@@ -133,6 +140,8 @@ void ConvertedPhotons::beginJob()
 
   hMuPt = new TH1D("hMuPt", "hMuPt", 100, 0, 30);
   hGammaPt = new TH1D("hGammaPt", "hGammaPt", 100, 0, 30);
+  hGammaDeltaR = new TH1D("hGammaDeltaR", "hGammaDeltaR", 100, 0, 0.05);
+  hGammaPtWithTrigger = new TH1D("hGammaPtWithTrigger", "hGammaPtWithTrigger", 100, 0, 30);
 
   cout << "HERE ConvertedPhotons::beginJob()" << endl;
 }
@@ -149,6 +158,8 @@ void ConvertedPhotons::endJob()
 
   hMuPt->Write();
   hGammaPt->Write();
+  hGammaDeltaR->Write();
+  hGammaPtWithTrigger->Write();
 
   myRootFile.Close();
 
@@ -156,6 +167,8 @@ void ConvertedPhotons::endJob()
   delete hBsMass;
   delete hMuPt;
   delete hGammaPt;
+  delete hGammaDeltaR;
+  delete hGammaPtWithTrigger;
 
   cout << "nConvertedPhotons: " << nConvPhotons << endl;
 
@@ -174,6 +187,38 @@ void ConvertedPhotons::analyze(
   const std::vector<reco::Photon> & recoPhotons = ev.get(thePhotonToken);
   const pat::CompositeCandidateCollection * conversions = &(ev.get(theConversionsToken));
   auto const& field = es.getData(m_fieldToken);
+
+  const edm::TriggerResults & triggerResults = ev.get(theTriggerResultsToken);
+  edm::TriggerNames triggerNames = ev.triggerNames(triggerResults);
+
+
+  vector<const reco::Candidate*> genMuons;
+  vector<const reco::Muon*> recoMatchedMuons;
+  vector<const reco::Candidate*> genMatchedMuons;
+
+  vector<const reco::Candidate*> genPhotons;
+  vector<RefCountedKinematicParticle> recoMatchedPhotons;
+  vector<const reco::Candidate*> genMatchedPhotons;
+
+  for(const auto& genP : genPar)
+  {
+    if (abs(genP.pdgId()) == 531)
+    {
+      vector<int> daughters;
+      for(unsigned int i=0; i < genP.numberOfDaughters(); i++)
+      {
+        daughters.push_back(genP.daughter(i)->pdgId());
+      }
+      if(isSameDecay(daughters, MuMuG))
+      {
+        for(unsigned int i=0; i < genP.numberOfDaughters(); i++)
+        {
+          if(abs(genP.daughter(i)->pdgId()) == 13) genMuons.push_back(genP.daughter(i));
+          if(abs(genP.daughter(i)->pdgId()) == 22) genPhotons.push_back(genP.daughter(i));
+        }
+      }
+    }
+  }
 
   vector<RefCountedKinematicParticle> convPhotons;
   for (pat::CompositeCandidateCollection::const_iterator conv = conversions->begin(); conv!= conversions->end(); ++conv) 
@@ -225,6 +270,42 @@ void ConvertedPhotons::analyze(
   }
 
   nConvertedPhotons->Fill(convPhotons.size());
+
+  // converted photon matching
+  for (const reco::Candidate* genPh : genPhotons)
+  {
+    float minDR = 10;
+    RefCountedKinematicParticle bestMatchedPhoton;
+    bool matched = false;
+    for (const auto& convPh : convPhotons)
+    {
+      float dR = reco::deltaR(convPh->currentState().globalMomentum().eta(), convPh->currentState().globalMomentum().phi(), genPh->eta(), genPh->phi());
+      if (dR < minDR)
+      {
+        minDR = dR;
+        bestMatchedPhoton = convPh;
+        matched = true;
+      }
+    }
+    if (matched) hGammaDeltaR->Fill(minDR);
+    if (matched && minDR < 0.02)
+    {
+      recoMatchedPhotons.push_back(bestMatchedPhoton);
+      genMatchedPhotons.push_back(genPh);
+      // hRecoVsGenGammaPt->Fill(genPh->pt(), bestMatchedPhoton->pt());
+      // hGammaPtError->Fill((bestMatchedPhoton->pt() - genPh->pt())/genPh->pt());
+      hGammaPt->Fill(bestMatchedPhoton->currentState().globalMomentum().perp());
+    }
+  }
+
+  for (unsigned int i = 0; i < triggerResults.size(); i++)
+  {
+    TString name = triggerNames.triggerName(i);
+    if (name == "HLT_DoubleMu4_3_LowMass_v1" && triggerResults.accept(i) == 1 && recoMatchedPhotons.size() > 0)
+    {
+      hGammaPtWithTrigger->Fill(recoMatchedPhotons.at(0)->currentState().globalMomentum().perp());
+    }
+  }
   
   
   vector<RefCountedKinematicParticle> muonKinematicParticles;
