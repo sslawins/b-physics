@@ -323,13 +323,14 @@ void ConvertedPhotons::analyze(
     muonKinematicParticles.push_back(pFactory.particle(muonTT, muon_mass, float(0), float(0), muon_sigma));
   }
 
-  for (auto const& mu1 : muonKinematicParticles)
+  for (unsigned int i = 0; i < muonKinematicParticles.size(); i++)
   {
-    for (auto const& mu2 : muonKinematicParticles)
+    for (unsigned int j = i+1; j < muonKinematicParticles.size(); j++)
     {
-      if (mu1 == mu2) continue;
       for (auto const& pho : convPhotons)
       {
+        RefCountedKinematicParticle mu1 = muonKinematicParticles.at(i);
+        RefCountedKinematicParticle mu2 = muonKinematicParticles.at(j);
         std::vector<RefCountedKinematicParticle> allParticles;
         allParticles.push_back(mu1);
         allParticles.push_back(mu2);
@@ -337,7 +338,7 @@ void ConvertedPhotons::analyze(
 
         const ParticleMass bs_mass = 5.366;
 
-        MultiTrackKinematicConstraint* bs_mass_constraint = new MultiTrackMassKinematicConstraint(bs_mass, 3);
+        // MultiTrackKinematicConstraint* bs_mass_constraint = new MultiTrackMassKinematicConstraint(bs_mass, 3);
 
         KinematicParticleVertexFitter fitter;
         RefCountedKinematicTree vertexFitTree = fitter.fit(allParticles);
