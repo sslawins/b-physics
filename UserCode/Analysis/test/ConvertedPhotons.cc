@@ -88,6 +88,7 @@ private:
   TH1D* nConvertedPhotons;
 
   TH1D* hBsMass;
+  TH1D* hBsMassFromP4;
   TH1D* hMuPt;
   TH1D* hGammaPt;
   TH1D* hGammaDeltaR;
@@ -137,7 +138,7 @@ void ConvertedPhotons::beginJob()
   nConvertedPhotons = new TH1D("nConvertedPhotons", "nConvertedPhotons", 10, 0, 10);
 
   hBsMass = new TH1D("hBsMass", "hBsMass", 50, 3, 7);
-
+  hBsMassFromP4 = new TH1D("hBsMassFromP4", "hBsMassFromP4", 50, 3, 7);
   hMuPt = new TH1D("hMuPt", "hMuPt", 100, 0, 30);
   hGammaPt = new TH1D("hGammaPt", "hGammaPt", 100, 0, 30);
   hGammaDeltaR = new TH1D("hGammaDeltaR", "hGammaDeltaR", 100, 0, 0.05);
@@ -155,7 +156,7 @@ void ConvertedPhotons::endJob()
   nConvertedPhotons->Write();
 
   hBsMass->Write();
-
+  hBsMassFromP4->Write();
   hMuPt->Write();
   hGammaPt->Write();
   hGammaDeltaR->Write();
@@ -165,6 +166,7 @@ void ConvertedPhotons::endJob()
 
   delete nConvertedPhotons;
   delete hBsMass;
+  delete hBsMassFromP4;
   delete hMuPt;
   delete hGammaPt;
   delete hGammaDeltaR;
@@ -306,7 +308,30 @@ void ConvertedPhotons::analyze(
       hGammaPtWithTrigger->Fill(recoMatchedPhotons.at(0)->currentState().globalMomentum().perp());
     }
   }
-  
+
+  // get largest pt converted photon
+  float maxPt = 0;
+  reco::Candidate::LorentzVector maxPtPhoton;
+  for (pat::CompositeCandidateCollection::const_iterator conv = conversions->begin(); conv!= conversions->end(); ++conv)
+  {
+    if (conv->p4().pt() > maxPt)
+    {
+      maxPt = conv->p4().pt();
+      maxPtPhoton = conv->p4();
+    }
+  }
+
+  // make Bs mass histogram from muons and largest pt converted photon
+  if (recoMuons.size() > 1 && convPhotons.size() > 0)
+  {
+    for (unsigned int i = 0; i < recoMuons.size(); i++)
+    {
+      for (unsigned int j = i+1; j < recoMuons.size(); j++)
+      {
+        hBsMassFromP4->Fill((recoMuons.at(i).p4() + recoMuons.at(j).p4() + maxPtPhoton).mass());
+      }
+    }
+  }
   
   vector<RefCountedKinematicParticle> muonKinematicParticles;
   for(const auto& recoMu : recoMuons)
@@ -351,7 +376,12 @@ void ConvertedPhotons::analyze(
 
         if (!fitVertex->vertexIsValid()) continue;
 
+        // invariant mass
         hBsMass->Fill(fitParticle->currentState().mass());
+
+        // lifetime
+
+
       }
     }
   }
