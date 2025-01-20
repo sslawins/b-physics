@@ -68,3 +68,7 @@
 <library   file="ConvertedPhotonsJpsi.cc" name="ConvertedPhotonsJpsi">
   <flags   EDM_PLUGIN="1"/>
 </library>
+
+<library   file="PhotonFitting.cc" name="PhotonFitting">
+  <flags   EDM_PLUGIN="1"/>
+</library>
