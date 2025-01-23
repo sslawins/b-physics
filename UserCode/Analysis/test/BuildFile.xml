@@ -13,11 +13,15 @@
 <use   name="DataFormats/HepMCCandidate"/>
 <use   name="DataFormats/MuonReco"/>
 <use   name="DataFormats/EgammaCandidates"/>
+<use   name="DataFormats/GeometryVector"/>
 <use   name="HLTrigger/HLTcore"/>
 
 
 <use   name="TrackingTools/TransientTrack"/>
 <use   name="TrackingTools/Records"/>
+<use   name="TrackingTools/PatternTools"/>
+<use   name="TrackingTools/TrajectoryState"/>
+<use   name="TrackingTools/TrajectoryParametrization"/>
 <use   name="RecoVertex/VertexPrimitives"/>
 <use   name="RecoVertex/KalmanVertexFit"/>
 <use   name="RecoVertex/KinematicFit"/>

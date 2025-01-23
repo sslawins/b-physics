@@ -37,7 +37,13 @@
 #include "RecoVertex/KinematicFit/interface/MultiTrackMassKinematicConstraint.h"
 #include "RecoVertex/KinematicFit/interface/KinematicConstrainedVertexFitter.h"
 
+
+#include "TrackingTools/TrajectoryState/interface/FreeTrajectoryState.h"
+#include "TrackingTools/TrajectoryParametrization/interface/CartesianTrajectoryError.h"
+#include "DataFormats/TrajectoryState/interface/TrackCharge.h"
 #include "DataFormats/GeometryVector/interface/GlobalVector.h"
+#include "DataFormats/GeometryVector/interface/GlobalPoint.h"
+#include "DataFormats/Math/interface/AlgebraicROOTObjects.h"
 
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
@@ -241,46 +247,65 @@ void PhotonFitting::analyze(
   for(const auto& recoPho : recoPhotons)
   {
     hGammaPt->Fill(recoPho.pt());
+    GlobalPoint vtx(0., 0., 0.);
+    GlobalVector p3(recoPho.px(), recoPho.py(), recoPho.pz());
+    TrackCharge ch = 0;
+
+    const ParticleMass photon_mass(0.);
+    float photon_sigma = 1E-6;
+
+    FreeTrajectoryState fts(vtx, p3, ch, &field);
     
+    AlgebraicSymMatrix66 photonCov{ROOT::Math::SMatrixIdentity()};
+    AlgebraicVector6 diagonal(1., 1., 10., 1., 1., 1.);
+    photonCov.SetDiagonal(diagonal);
+
+    CartesianTrajectoryError photonErr(photonCov);
+    fts.setCartesianError(photonErr);
+
+    reco::TransientTrack phoTT = theB->build(fts);
+    KinematicParticleFactoryFromTransientTrack pFactory;
+    photonKinematicParticles.push_back(pFactory.particle(phoTT, photon_mass, float(0), float(0), photon_sigma));
   }
 
-  // for (unsigned int i = 0; i < muonKinematicParticles.size(); i++)
-  // {
-  //   for (unsigned int j = i+1; j < muonKinematicParticles.size(); j++)
-  //   {
-  //     for (auto const& pho : convPhotons)
-  //     {
-  //       RefCountedKinematicParticle mu1 = muonKinematicParticles.at(i);
-  //       RefCountedKinematicParticle mu2 = muonKinematicParticles.at(j);
-  //       std::vector<RefCountedKinematicParticle> allParticles;
-  //       allParticles.push_back(mu1);
-  //       allParticles.push_back(mu2);
-  //       allParticles.push_back(pho);
+  for (unsigned int i = 0; i < muonKinematicParticles.size(); i++)
+  {
+    for (unsigned int j = i+1; j < muonKinematicParticles.size(); j++)
+    {
+      for (unsigned int k = 0; k < photonKinematicParticles.size(); k++)
+      {
+        RefCountedKinematicParticle mu1 = muonKinematicParticles.at(i);
+        RefCountedKinematicParticle mu2 = muonKinematicParticles.at(j);
+        RefCountedKinematicParticle pho = photonKinematicParticles.at(k);
+        std::vector<RefCountedKinematicParticle> allParticles;
+        allParticles.push_back(mu1);
+        allParticles.push_back(mu2);
+        allParticles.push_back(pho);
 
-  //       const ParticleMass bs_mass = 5.366;
+        const ParticleMass bs_mass = 5.366;
 
-  //       // MultiTrackKinematicConstraint* bs_mass_constraint = new MultiTrackMassKinematicConstraint(bs_mass, 3);
+        // MultiTrackKinematicConstraint* bs_mass_constraint = new MultiTrackMassKinematicConstraint(bs_mass, 3);
 
-  //       KinematicParticleVertexFitter fitter;
-  //       RefCountedKinematicTree vertexFitTree = fitter.fit(allParticles);
+        KinematicParticleVertexFitter fitter;
+        RefCountedKinematicTree vertexFitTree = fitter.fit(allParticles);
 
-  //       if (!vertexFitTree->isValid()) continue;
+        if (!vertexFitTree->isValid()) continue;
 
-  //       vertexFitTree->movePointerToTheTop();
-  //       RefCountedKinematicParticle fitParticle = vertexFitTree->currentParticle();
-  //       RefCountedKinematicVertex fitVertex = vertexFitTree->currentDecayVertex();
+        vertexFitTree->movePointerToTheTop();
+        RefCountedKinematicParticle fitParticle = vertexFitTree->currentParticle();
+        RefCountedKinematicVertex fitVertex = vertexFitTree->currentDecayVertex();
 
-  //       if (!fitVertex->vertexIsValid()) continue;
+        if (!fitVertex->vertexIsValid()) continue;
 
-  //       // invariant mass
-  //       hBsMass->Fill(fitParticle->currentState().mass());
+        // invariant mass
+        hBsMass->Fill(fitParticle->currentState().mass());
 
-  //       // lifetime
+        // lifetime
 
 
-  //     }
-  //   }
-  // }
+      }
+    }
+  }
 
   cout <<"*** Analyze event: " << ev.id() <<" analysed event count:" << ++theEventCount << endl;
 }
