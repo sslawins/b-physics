@@ -52,11 +52,11 @@ public:
 
   bool isSameChannel(const std::vector<int>&, const std::vector<int>&);
   std::vector<std::vector<const reco::Candidate*>> bFamilyTree(const std::vector<reco::GenParticle>&);
-  void findPhotonFromBs(const std::vector<reco::Photon>&);
-  void findMuonsFromBs(const std::vector<reco::Muon>&);
   double energy     ( const reco::Candidate* , double );
   double invariantMass  ( const reco::Candidate* , const reco::Candidate* , const reco::Candidate* = nullptr );
-
+  double invariantMass  ( const reco::Candidate* , const reco::Candidate* , const ROOT::Math::XYZVector& );
+  const ROOT::Math::XYZVector& scaleP ( double , const reco::Candidate*);
+  
 private:
 
   edm::ParameterSet theConfig;
@@ -81,6 +81,8 @@ private:
   TH1D *hPhiToMuMu;
   TH1D *hPhiDecayProducts;
   TH1D *hBsMass;
+  TH1D *hBsMass_DirRecoLenGen;
+  TH1D *hBsMass_DirGenLenReco;
   TH1D *hPhiMass;
 
   //check how often a Bs is formed
@@ -158,6 +160,7 @@ private:
   edm::EDGetTokenT < vector<reco::Photon> > thePhotonToken;
 
   std::vector<int> MuMuG = {22, 13, -13};
+  std::vector<int> MuMu = {13, -13};
   std::vector<int> BsStarG= {22, 533};
   std::vector<int> Bs= {531};
   std::vector<int> PhiG= {333, 22};
@@ -218,17 +221,17 @@ std::vector<std::vector<const reco::Candidate*>> ControlChannelPhi::bFamilyTree(
             hInitial -> Fill( abs(part.pdgId()) );
             lineage.clear();
             const reco::Candidate* ancestor = static_cast<const reco::Candidate*>(&part);
-            lineage.push_back(ancestor);
+            lineage.push_back(ancestor); //we have a vector for the evolution of one b quark and the initial particle a the beginning
 
             while (ancestor != nullptr){
-              std::vector<int> decay;
+              std::vector<int> decay; //daughters, with sign
               bool last = true;
 
               for (unsigned int dauIter = 0; dauIter < ancestor->numberOfDaughters(); ++dauIter) {
                 const reco::Candidate* daughter = ancestor -> daughter(dauIter);
                 decay.push_back( daughter->pdgId() );
 
-                if (last== true && (abs(daughter->pdgId()) / 100) == 5) { //mother B found
+                if (last == true && (abs(daughter->pdgId()) / 100) == 5) { //mother B found
 
                     lineage.push_back(daughter);
                     ancestor = daughter; // new ancestor
@@ -247,16 +250,27 @@ std::vector<std::vector<const reco::Candidate*>> ControlChannelPhi::bFamilyTree(
 
                 if( isSameChannel(decay, PhiG)  ) {
                   hBssPt -> Fill (lineage.back()->pt());
-                  for( size_t i = 0; i < lineage.back()->numberOfDaughters(); ++i ){
-                    if(lineage.back()-> daughter(i) ->pdgId()  == 333){
 
+                  for( size_t i = 0; i < lineage.back()->numberOfDaughters(); ++i ){
+                    
+                    if(lineage.back()-> daughter(i) ->pdgId()  == 333){ //phi
+                      std::vector<int> phiDecay;
                       const reco::Candidate* phi = lineage.back()-> daughter(i);
                       
                       hPhiEta -> Fill(phi->eta());
                       hPhiPt -> Fill(phi->pt());
                       hPhi_Eta_Pt ->Fill(phi->eta() , lineage.back()-> daughter(i)->pt());
+
                       cout << " Phi decay, number of daughters: " <<  phi -> numberOfDaughters() << endl;
-                      if( phi -> numberOfDaughters() == 2 && abs(phi->daughter(0) ->pdgId()) == 13 && abs(phi->daughter(1) ->pdgId()) == 13){
+                      cout << "Phi daughters: " ;
+                      for( size_t dauPhi = 0; dauPhi < phi -> numberOfDaughters(); ++dauPhi ){
+                        cout << phi -> daughter(dauPhi)->pdgId() << " " ;
+                        phiDecay.push_back( phi ->daughter(dauPhi)->pdgId() );
+                        hPhiDecayProducts -> Fill( abs(phi -> daughter(dauPhi)->pdgId()) );
+                      }
+                      cout << endl;
+                      
+                      if( isSameChannel(phiDecay, MuMu)){
                         hPhiToMuMu -> Fill(1.);
                         hPhiDecayGen_Pt -> Fill(phi->daughter(0)->pt());
                         hPhiDecayGen_Pt -> Fill(phi->daughter(1)->pt());
@@ -264,16 +278,10 @@ std::vector<std::vector<const reco::Candidate*>> ControlChannelPhi::bFamilyTree(
                         hPhiDecayGen_Eta_Pt -> Fill(phi->daughter(1)->eta(), phi->daughter(1)->pt());
                         genMuons.push_back(phi->daughter(0));
                         genMuons.push_back(phi->daughter(1));
-                      }else{
-                        //cout << "Phi daughters: " ;
-                        for( size_t dauPhi = 0; dauPhi < phi -> numberOfDaughters(); ++dauPhi ){
-                          //cout << phi -> daughter(dauPhi)->pdgId() << " " ;
-                          hPhiDecayProducts -> Fill( abs(phi -> daughter(dauPhi)->pdgId()) );
-                        }
-                        //cout << endl;
                       }
 
                     }
+
                     if(lineage.back()-> daughter(i) ->pdgId()  == 22){
                       hDecayGamma_Eta -> Fill(lineage.back()-> daughter(i)->eta());
                       hDecayGamma_Pt -> Fill(lineage.back()-> daughter(i)->pt());
@@ -304,11 +312,6 @@ std::vector<std::vector<const reco::Candidate*>> ControlChannelPhi::bFamilyTree(
     return bTree;
 }
 
-void ControlChannelPhi::findMuonsFromBs(const std::vector<reco::Muon>& recoGamma) {
-  
-}
-void ControlChannelPhi::findPhotonFromBs(const std::vector<reco::Photon>& recoMuon) {
-}
 
 double ControlChannelPhi::energy(const reco::Candidate* par, double mass){
   double energy = sqrt( pow(par->p() , 2.) + mass * mass);
@@ -330,6 +333,33 @@ double ControlChannelPhi::invariantMass(const reco::Candidate* c1, const reco::C
     return sum.M();
 }
 
+double ControlChannelPhi::invariantMass(const reco::Candidate* c1, const reco::Candidate* c2, const ROOT::Math::XYZVector& momentum) {
+    TLorentzVector p4_1(c1->px(), c1->py(), c1->pz(), energy(c1, mMu));
+    TLorentzVector p4_2(c2->px(), c2->py(), c2->pz(), energy(c2, mMu));
+
+    TLorentzVector sum = p4_1 + p4_2;
+
+    double en = momentum.Mag2(); // Magnitude squared
+    TLorentzVector p4_3(momentum.X(), momentum.Y(), momentum.Z(), sqrt(en));
+
+    sum += p4_3;
+
+    return sum.M();
+}
+
+const ROOT::Math::XYZVector& ControlChannelPhi::scaleP(double scale, const reco::Candidate* c1) {
+    
+    double px = c1->px();
+    double py = c1->py();
+    double pz = c1->pz();
+
+    static ROOT::Math::XYZVector scaledMomentum;
+
+    scaledMomentum.SetXYZ(scale * px, scale * py, scale * pz);
+
+    return scaledMomentum;
+}
+
 void ControlChannelPhi::beginJob()
 {
   //B mesons momentum
@@ -341,6 +371,8 @@ void ControlChannelPhi::beginJob()
   hPhiToMuMu = new TH1D("hPhiToMuMu", "Number of #Phi #rightarrow #mu#mu decays; Decays per Event; Events", 6, -0.5, 5.5);
   hPhiDecayProducts = new TH1D("hPhiDecayProducts", "Products of #Phi decays; Particle ID; Events",350 , 0.5, 350.5);
   hBsMass = new TH1D("hBsMass", "Reconstruction of B_{s}^{0}; M_{inv} [GeV]; Counts",48 , 5., 6.2);
+  hBsMass_DirRecoLenGen = new TH1D("hBsMass_DirRecoLenGen", "B_{s}^{0}, direction of reco photon; M_{inv} [GeV]; Counts",48 , 5., 6.2);
+  hBsMass_DirGenLenReco = new TH1D("hBsMass_DirGenLenReco", "B_{s}^{0}, direction of gen photon; M_{inv} [GeV]; Counts",48 , 5., 6.2);
   hPhiMass = new TH1D("hPhiMass", "Reconstruction of #Phi ; M_{inv} [GeV]; Counts", 48 , 0.9, 1.2);
 
   //reconstruction
@@ -433,6 +465,8 @@ void ControlChannelPhi::endJob()
   hPhiToMuMu-> Write();
   hPhiDecayProducts -> Write();
   hBsMass -> Write();
+  hBsMass_DirGenLenReco -> Write();
+  hBsMass_DirRecoLenGen -> Write();
   hPhiMass -> Write();
 
   hBsToB-> Write();
@@ -509,6 +543,8 @@ void ControlChannelPhi::endJob()
   delete hPhiToMuMu;
   delete hPhiDecayProducts;
   delete hBsMass;
+  delete hBsMass_DirGenLenReco;
+  delete hBsMass_DirRecoLenGen;
   delete hPhiMass;
 
   delete hBsToB;
@@ -821,12 +857,23 @@ void ControlChannelPhi::analyze(
         if( recoMatchedMu[0] == nullptr) cout << "mu 1 nullprt ";
         if( recoMatchedMu[1] == nullptr) cout << "mu 2 nullprt " << endl;
 
+        double dirGenMagReco = recoPhoton ->p()/genPhotons[0]->p(); //scale for 
+        double dirRecoMagGen = 1./dirGenMagReco; //scales
+
+        dirGenMagReco = invariantMass(recoMatchedMu[0], recoMatchedMu[1], scaleP(dirGenMagReco, genPhotons[0]));
+        dirRecoMagGen = invariantMass(recoMatchedMu[0], recoMatchedMu[1], scaleP(dirRecoMagGen, recoPhoton));
+
+        hBsMass_DirGenLenReco->Fill(dirGenMagReco);
+        hBsMass_DirRecoLenGen->Fill(dirRecoMagGen);
+
         double bsMass = invariantMass(recoMatchedMu[0], recoMatchedMu[1], recoPhoton);
         double phiMass = invariantMass(recoMatchedMu[0], recoMatchedMu[1]);
 
         hBsMass -> Fill( bsMass );
         hPhiMass -> Fill( phiMass );
         cout << " invariant mass: " << bsMass << " " << phiMass << endl;
+        cout << " invariant mass, gen direction, reco magnitude: " << dirGenMagReco << endl;
+        cout << " invariant mass, reco direction, gen magnitude: " << dirRecoMagGen << endl;
       }
     }
   }

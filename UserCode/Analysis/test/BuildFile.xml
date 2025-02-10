@@ -11,12 +11,22 @@
 <use   name="DataFormats/L1DTTrackFinder"/>
 <use   name="DataFormats/PatCandidates"/>
 <use   name="DataFormats/HepMCCandidate"/>
-<use   name="DataFormats/Math"/>
+<use   name="DataFormats/MuonReco"/>
+<use   name="DataFormats/EgammaCandidates"/>
+<use   name="DataFormats/GeometryVector"/>
+<use   name="HLTrigger/HLTcore"/>
 
 <use   name="TrackingTools/TransientTrack"/>
 <use   name="TrackingTools/Records"/>
+<use   name="TrackingTools/PatternTools"/>
+<use   name="TrackingTools/TrajectoryState"/>
+<use   name="TrackingTools/TrajectoryParametrization"/>
 <use   name="RecoVertex/VertexPrimitives"/>
 <use   name="RecoVertex/KalmanVertexFit"/>
+<use   name="RecoVertex/KinematicFit"/>
+<use   name="RecoVertex/KinematicFitPrimitives"/>
+<use   name="MagneticField/Engine"/>
+<use   name="MagneticField/Records"/>
 
 <use   name="clhep"/>
 <use   name="hepmc"/>
@@ -29,3 +39,8 @@
 <library   file="ControlChannelPhi.cc" name="ControlChannelPhi">
   <flags   EDM_PLUGIN="1"/>
 </library>
+
+<library file="PVdistance.cc BDecayAnalyzer.cc" name="PVdistance">
+  <flags EDM_PLUGIN="1"/>
+</library>
+
