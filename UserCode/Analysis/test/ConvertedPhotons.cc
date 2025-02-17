@@ -40,6 +40,8 @@
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 
+#include "TrackingTools/PatternTools/interface/ClosestApproachInRPhi.h"
+
 
 #include "TH1D.h"
 #include "TH2D.h"
@@ -53,7 +55,10 @@
 #include <numeric>
 
 
+using namespace reco;
+using namespace edm;
 using namespace std;
+using namespace pat;
 
 
 //object definition
@@ -88,6 +93,7 @@ private:
   TH1D* nConvertedPhotons;
 
   TH1D* hBsMass;
+  TH1D* hBsMassNoMatch;
   TH1D* hBsMassFromP4;
   TH1D* hMuPt;
   TH1D* hGammaPt;
@@ -138,6 +144,7 @@ void ConvertedPhotons::beginJob()
   nConvertedPhotons = new TH1D("nConvertedPhotons", "nConvertedPhotons", 10, 0, 10);
 
   hBsMass = new TH1D("hBsMass", "hBsMass", 50, 3, 7);
+  hBsMassNoMatch = new TH1D("hBsMassNoMatch", "hBsMassNoMatch", 50, 3, 7);
   hBsMassFromP4 = new TH1D("hBsMassFromP4", "hBsMassFromP4", 50, 3, 7);
   hMuPt = new TH1D("hMuPt", "hMuPt", 100, 0, 30);
   hGammaPt = new TH1D("hGammaPt", "hGammaPt", 100, 0, 30);
@@ -156,6 +163,7 @@ void ConvertedPhotons::endJob()
   nConvertedPhotons->Write();
 
   hBsMass->Write();
+  hBsMassNoMatch->Write();
   hBsMassFromP4->Write();
   hMuPt->Write();
   hGammaPt->Write();
@@ -166,6 +174,7 @@ void ConvertedPhotons::endJob()
 
   delete nConvertedPhotons;
   delete hBsMass;
+  delete hBsMassNoMatch;
   delete hBsMassFromP4;
   delete hMuPt;
   delete hGammaPt;
@@ -197,10 +206,12 @@ void ConvertedPhotons::analyze(
   vector<const reco::Candidate*> genMuons;
   vector<const reco::Muon*> recoMatchedMuons;
   vector<const reco::Candidate*> genMatchedMuons;
+  vector<const reco::Muon*> recoNonMatchedMuons;
 
   vector<const reco::Candidate*> genPhotons;
   vector<RefCountedKinematicParticle> recoMatchedPhotons;
   vector<const reco::Candidate*> genMatchedPhotons;
+  vector<RefCountedKinematicParticle> recoNonMatchedPhotons;
 
   for(const auto& genP : genPar)
   {
@@ -273,6 +284,38 @@ void ConvertedPhotons::analyze(
 
   nConvertedPhotons->Fill(convPhotons.size());
 
+  // reco muon matching
+  for (const reco::Candidate* genMu : genMuons)
+  {
+    float minDR = 10;
+    const reco::Muon* bestMatchedMuon;
+    bool matched = false;
+    for (const auto& recoMu : recoMuons)
+    {
+      float dR = reco::deltaR(recoMu, *genMu);
+      if (dR < minDR)
+      {
+        minDR = dR;
+        bestMatchedMuon = &recoMu;
+        matched = true;
+      }
+      else
+      {
+        recoNonMatchedMuons.push_back(&recoMu);
+      }
+
+    }
+    // if (matched) hMuDeltaR->Fill(minDR);
+    if (matched && minDR < 0.01)
+    {
+      recoMatchedMuons.push_back(bestMatchedMuon);
+      genMatchedMuons.push_back(genMu);
+      // hRecoVsGenMuPt->Fill(genMu->pt(), bestMatchedMuon->pt());
+      // hMuPtError->Fill((bestMatchedMuon->pt() - genMu->pt())/genMu->pt());
+    }
+  }
+
+
   // converted photon matching
   for (const reco::Candidate* genPh : genPhotons)
   {
@@ -287,6 +330,10 @@ void ConvertedPhotons::analyze(
         minDR = dR;
         bestMatchedPhoton = convPh;
         matched = true;
+      }
+      else
+      {
+        recoNonMatchedPhotons.push_back(bestMatchedPhoton);
       }
     }
     if (matched) hGammaDeltaR->Fill(minDR);
@@ -334,8 +381,9 @@ void ConvertedPhotons::analyze(
   }
   
   vector<RefCountedKinematicParticle> muonKinematicParticles;
-  for(const auto& recoMu : recoMuons)
+  for(const auto& recoMuPointer : recoMatchedMuons)
   {
+    reco::Muon recoMu = *recoMuPointer;
     hMuPt->Fill(recoMu.pt());
     reco::TrackRef muTrack = recoMu.track();
     if(!muTrack) continue;
@@ -348,11 +396,26 @@ void ConvertedPhotons::analyze(
     muonKinematicParticles.push_back(pFactory.particle(muonTT, muon_mass, float(0), float(0), muon_sigma));
   }
 
+  vector<RefCountedKinematicParticle> muonNonMatchedKinematicParticles;
+  for(const auto& recoMuPointer : recoNonMatchedMuons)
+  {
+    reco::Muon recoMu = *recoMuPointer;
+    reco::TrackRef muTrack = recoMu.track();
+    if(!muTrack) continue;
+    reco::TransientTrack muonTT = reco::TransientTrack(muTrack, &field);
+
+    const ParticleMass muon_mass(0.105658);
+    float muon_sigma = 1E-6;
+
+    KinematicParticleFactoryFromTransientTrack pFactory;
+    muonNonMatchedKinematicParticles.push_back(pFactory.particle(muonTT, muon_mass, float(0), float(0), muon_sigma));
+  }
+
   for (unsigned int i = 0; i < muonKinematicParticles.size(); i++)
   {
     for (unsigned int j = i+1; j < muonKinematicParticles.size(); j++)
     {
-      for (auto const& pho : convPhotons)
+      for (auto const& pho : recoMatchedPhotons)
       {
         RefCountedKinematicParticle mu1 = muonKinematicParticles.at(i);
         RefCountedKinematicParticle mu2 = muonKinematicParticles.at(j);
@@ -385,6 +448,49 @@ void ConvertedPhotons::analyze(
       }
     }
   }
+
+
+
+
+
+    for (unsigned int i = 0; i < muonNonMatchedKinematicParticles.size(); i++)
+  {
+    for (unsigned int j = i+1; j < muonNonMatchedKinematicParticles.size(); j++)
+    {
+      for (auto const& pho : recoNonMatchedPhotons)
+      {
+        RefCountedKinematicParticle mu1 = muonNonMatchedKinematicParticles.at(i);
+        RefCountedKinematicParticle mu2 = muonNonMatchedKinematicParticles.at(j);
+        std::vector<RefCountedKinematicParticle> allParticles;
+        allParticles.push_back(mu1);
+        allParticles.push_back(mu2);
+        allParticles.push_back(pho);
+
+        const ParticleMass bs_mass = 5.366;
+
+        // MultiTrackKinematicConstraint* bs_mass_constraint = new MultiTrackMassKinematicConstraint(bs_mass, 3);
+
+        KinematicParticleVertexFitter fitter;
+        RefCountedKinematicTree vertexFitTree = fitter.fit(allParticles);
+
+        if (!vertexFitTree->isValid()) continue;
+
+        vertexFitTree->movePointerToTheTop();
+        RefCountedKinematicParticle fitParticle = vertexFitTree->currentParticle();
+        RefCountedKinematicVertex fitVertex = vertexFitTree->currentDecayVertex();
+
+        if (!fitVertex->vertexIsValid()) continue;
+
+        // invariant mass
+        hBsMassNoMatch->Fill(fitParticle->currentState().mass());
+
+        // lifetime
+
+
+      }
+    }
+  }
+  
 
   cout <<"*** Analyze event: " << ev.id() <<" analysed event count:" << ++theEventCount << endl;
 }
