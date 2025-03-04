@@ -13,6 +13,9 @@ public:
     std::vector<const reco::Candidate*> getPhotons();
     std::vector<std::vector<const reco::Candidate*>> analyzeBDecays(const std::vector<reco::GenParticle>& genParticles);
 
+    void printTheTree( std::vector<std::vector<const reco::Candidate*>> );
+    bool analyzeEvent ( edm::EventID );
+
 private:
 
     edm::EDGetTokenT<std::vector<reco::GenParticle>> genParticleToken;

@@ -70,10 +70,10 @@ std::vector<std::vector<const reco::Candidate*>> BDecayAnalyzer::analyzeBDecays(
                       std::vector<int> phiDecay;
                       const reco::Candidate* phi = lineage.back()-> daughter(i);
                       
-                      std::cout << " Phi decay, number of daughters: " <<  phi -> numberOfDaughters() << std::endl;
-                      std::cout << "Phi daughters: " ;
+                      //std::cout << " Phi decay, number of daughters: " <<  phi -> numberOfDaughters() << std::endl;
+                      //std::cout << "Phi daughters: " ;
                       for( size_t dauPhi = 0; dauPhi < phi -> numberOfDaughters(); ++dauPhi ){
-                        std::cout << phi -> daughter(dauPhi)->pdgId() << " " ;
+                        //std::cout << phi -> daughter(dauPhi)->pdgId() << " " ;
                         phiDecay.push_back( phi ->daughter(dauPhi)->pdgId() );
                     
                       }
@@ -112,4 +112,21 @@ std::vector<std::vector<const reco::Candidate*>> BDecayAnalyzer::analyzeBDecays(
     return bTree;
 }
 
+bool BDecayAnalyzer::analyzeEvent( edm::EventID evId){
+  if (genMuons.size() != 2 || genPhotons.size() != 1) {
+    std::cout << "Skipping event: " << evId << " (condition not met)" << std::endl;
+    return false;  
+  }
+  return true;
+}
 
+void BDecayAnalyzer::printTheTree( std::vector<std::vector<const reco::Candidate*>> tree ){
+  std::cout <<"Family tree: " << std::endl;
+  for (const auto& lineage : tree) { 
+    //if( abs(lineage.back()->pdgId()) == 531 ) nBs++;
+    for (const auto* particle : lineage) { 
+        std::cout << particle->pdgId() << " "; 
+    }
+    std::cout << std::endl; 
+  }
+}

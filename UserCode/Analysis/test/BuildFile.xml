@@ -40,7 +40,7 @@
   <flags   EDM_PLUGIN="1"/>
 </library>
 
-<library file="PVdistance.cc BDecayAnalyzer.cc" name="PVdistance">
+<library file="PVdistance.cc BDecayAnalyzer.cc HLTdecision.cc MuonMatcher.cc" name="PVdistance">
   <flags EDM_PLUGIN="1"/>
 </library>
 

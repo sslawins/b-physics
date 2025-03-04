@@ -54,6 +54,8 @@
 #include <stack>
 
 #include "BDecayAnalyzer.h"
+#include "HLTdecision.h"
+#include "MuonMatcher.h"
 
 
 using namespace std;
@@ -80,11 +82,8 @@ private:
   unsigned int theEventCount;
 
   //Bs and phi decay - vectors for the products
-  vector<const reco::Candidate*> genMuons;
-  vector<const reco::Muon*> recoMatchedMuons;
-  vector<const reco::Muon*> recoMatchedMuonsOtherSide;
+  vector<const reco::Candidate*> genMuons; 
   vector<const reco::Candidate*> genPhotons;
-  vector<const reco::Photon*> recoMatchedPhotons;
 
   //tokens
   edm::EDGetTokenT < vector<reco::GenParticle> > theGenParticleToken;
@@ -93,6 +92,11 @@ private:
   //edm::EDGetTokenT < vector<pat::CompositeCandidate> > theConversionsToken;
   //edm::ESGetToken<MagneticField, IdealMagneticFieldRecord> m_fieldToken;
   edm::EDGetTokenT < edm::TriggerResults > theTriggerResultsToken;
+  edm::EDGetTokenT < vector<reco::Vertex> > thePVToken;
+
+  TH1D *hPhiMass;
+  TH1D *hPCAz;
+  TH1D *hPvSvDistance;
 
 };
 
@@ -104,10 +108,11 @@ PVdistance::PVdistance(const edm::ParameterSet& conf)
 
   theGenParticleToken = consumes< vector<reco::GenParticle>  >( edm::InputTag("genParticles" ));
   theMuonToken = consumes< vector<reco::Muon>  >( edm::InputTag("muons"));
-  thePhotonToken = consumes< vector<reco::Photon>  >( edm::InputTag("photons"));
+  //thePhotonToken = consumes< vector<reco::Photon>  >( edm::InputTag("photons"));
   //theConversionsToken = consumes< vector<pat::CompositeCandidate> >( edm::InputTag("oniaPhotonCandidates","conversions"));
   //m_fieldToken = esConsumes<MagneticField, IdealMagneticFieldRecord>();
   theTriggerResultsToken = consumes<edm::TriggerResults>(edm::InputTag("TriggerResults", "", "HLT"));
+  thePVToken = consumes< vector<reco::Vertex>  >( edm::InputTag("offlinePrimaryVertices"));
 }
 
 //destructor
@@ -116,9 +121,12 @@ PVdistance::~PVdistance()
   cout <<" DTOR" << endl;
 }
 
-
 void PVdistance::beginJob()
 {
+
+  hPhiMass = new TH1D("hPhiMass", "Reconstruction of #Phi ; M_{inv} [GeV]; Counts", 48 , 0.9, 1.2);
+  hPCAz = new TH1D("hPCAz", "Distance between the point of closest approach and PV, z axis", 200, -10, 10);
+  hPvSvDistance = new TH1D("hPvSvDistance", "Distance between PV and SV", 200, -10, 10);
 
   cout << "HERE PVdistance::beginJob()" << endl;
 }
@@ -129,9 +137,15 @@ void PVdistance::endJob()
   TFile myRootFile( theConfig.getParameter<std::string>("outHist").c_str(), "RECREATE");
 
   //write histogram data
+  hPhiMass -> Write();
+  hPCAz    -> Write();
+  hPvSvDistance -> Write();
 
   myRootFile.Close();
 
+  delete hPhiMass;
+  delete hPCAz;
+  delete hPvSvDistance;
 
   cout << "HERE PVdistance::endJob()" << endl;
 }
@@ -140,53 +154,78 @@ void PVdistance::endJob()
 void PVdistance::analyze(
     const edm::Event& ev, const edm::EventSetup& es)
 {
+
+  
   std::cout << " -------------------------------- HERE PVdistance::analyze "<< std::endl;
 
   genMuons.clear();
-  recoMatchedMuons.clear();
-  //genMuonsOtherSide.clear(); ----> this is exactly what cascadeMuons is
-  recoMatchedMuonsOtherSide.clear();
   genPhotons.clear();
-  recoMatchedPhotons.clear();
 
   const std::vector<reco::GenParticle> & genPar = ev.get(theGenParticleToken);
   const std::vector<reco::Muon> & recoMuons = ev.get(theMuonToken);
-  const std::vector<reco::Photon> & recoPhotons = ev.get(thePhotonToken);
-  
+  //const std::vector<reco::Photon> & recoPhotons = ev.get(thePhotonToken);
   //const pat::CompositeCandidateCollection * conversions = &(ev.get(theConversionsToken));
   //auto const& field = es.getData(m_fieldToken);
-  const edm::TriggerResults & triggerResults = ev.get(theTriggerResultsToken);
-  edm::TriggerNames triggerNames = ev.triggerNames(triggerResults);
-
-  cout <<"Number of triggers:   " <<triggerNames.size() << endl;
-  for (unsigned int trgIter = 0; trgIter < triggerNames.size(); ++trgIter ){
-    cout << triggerNames.triggerName(trgIter) << endl;
-  }
   
+  HLTdecision HLTdecision(theTriggerResultsToken, ev, theConfig);
+  bool accepted = HLTdecision.checkTriggers(ev, true); //print = true
+  if(!accepted) return ;
 
   BDecayAnalyzer bAnalyzer;
   std::vector<std::vector<const reco::Candidate*>> tree = bAnalyzer.analyzeBDecays(genPar);
-  //std::vector<const reco::Candidate*> cascadeMuons;
   genPhotons = bAnalyzer.getPhotons();
   genMuons = bAnalyzer.getMuons();
-  //if(genMuons.size() == 2 && genPhotons.size() == 1) cout << genMuons[0]->pt() << "  " << genPhotons[0]->pt() << endl;
-  
-  if (genMuons.size() != 2 || genPhotons.size() != 1) {
-    std::cout << "Skipping event: " << ev.id() << " (condition not met)" << std::endl;
-    return;  
-  }
-  
+  if(! bAnalyzer.analyzeEvent(ev.id())) return;
   // print the family tree
-  std::cout <<"Family tree: " << std::endl;
-  for (const auto& lineage : tree) { 
-    //if( abs(lineage.back()->pdgId()) == 531 ) nBs++;
-    for (const auto* particle : lineage) { 
-        std::cout << particle->pdgId() << " "; 
-    }
-    std::cout << std::endl; 
+  bAnalyzer.printTheTree(tree);
+
+  MuonMatcher muonMatcher( recoMuons, genMuons, 0.1);
+  muonMatcher.matchRecoToGen();
+  muonMatcher.printMatchedMuons();
+  std::cout << "Matching successful: " << muonMatcher.isSuccessful() << std::endl;
+  std::vector< const reco::Candidate*> matchedMuons = muonMatcher.getMatched();
+
+  for( const auto& muon : matchedMuons){
+    std::cout << "Matched muons' SV: (" << muon->vertex().x() 
+              << " , " << muon->vertex().Y()
+              << " , " << muon->vertex().Z() << ")"
+              << std::endl;
   }
 
-  
+  //ROOT::Math::PositionVector3D<ROOT::Math::Cartesian3D<double>>  -->  math::XYZPoint
+  math::XYZPoint sv = matchedMuons[0]->vertex();
+  math::XYZPoint svG0 = genMuons[0]->vertex();
+  math::XYZPoint svG1 = genMuons[1]->vertex();
+  std::vector<math::XYZPoint> vertices = {sv,svG0, svG1};
+  for(const auto& vertex : vertices){
+      std::cout << "Matched muons' SV: (" << vertex.x() 
+              << " , " << vertex.Y()
+              << " , " << vertex.Z() << ")"
+              << std::endl;
+  }
+
+  math::XYZVectorD pMuMu = matchedMuons[0]->momentum() + matchedMuons[1]->momentum();
+
+  //ROOT::Math::DisplacementVector3D<ROOT::Math::Cartesian3D<double> > p_MuMu(0.,0.,0.);
+
+  ////////////////// PV /////////////////
+  const std::vector<reco::Vertex> & PVertices = ev.get(thePVToken);  
+
+  std::cout << "Primary vertices: " << std::endl;
+  for( const auto& vertex : PVertices){
+    std::cout << vertex.position().Theta() << "  " << vertex.y() << "  " << vertex.z() << "  " << std::endl;
+  }
+  math::XYZPoint pv = PVertices[0].position();
+  math::XYZPoint pca = sv;
+  double s = ((pv - sv).Dot(pMuMu)) / pMuMu.Mag2();
+  math::XYZVectorD y = s*pMuMu;
+  pca += y;
+  double minDistance = sqrt((pca - pv).Mag2());
+  std::cout << "PV: (" << pv.X() << ", " << pv.Y() << ", " << pv.Z() << ")" << std::endl;
+  std::cout << "PCA: (" << pca.X() << ", " << pca.Y() << ", " << pca.Z() << ")" << std::endl;
+  std::cout << "Minimalna odległość: " << minDistance << std::endl;
+  //cout <<"Number of triggers:   " <<triggerNames.size() << endl;
+ 
   cout <<"*** Analyze event: " << ev.id() <<" analysed event count:" << ++theEventCount << endl;
 }
 
