@@ -2,18 +2,18 @@
 #include "DecayTools.h"
 
 BDecayAnalyzer::BDecayAnalyzer()
-    : genMuons(), genPhotons()  {}
+    : phiProducts(), genPhotons()  {}
 
-std::vector<const reco::Candidate*> BDecayAnalyzer::getMuons() {
-  return genMuons;
+std::vector<const reco::Candidate*> BDecayAnalyzer::getPhiProducts() {
+  return phiProducts;
 }
 
 std::vector<const reco::Candidate*> BDecayAnalyzer::getPhotons() {
   return genPhotons;
 }
 
-std::vector<std::vector<const reco::Candidate*>> BDecayAnalyzer::analyzeBDecays(const std::vector<reco::GenParticle>& genParticles) {
-    genMuons.clear();
+std::vector<std::vector<const reco::Candidate*>> BDecayAnalyzer::analyzeBDecays(const std::vector<reco::GenParticle>& genParticles, const std::vector<int> channel) {
+    phiProducts.clear();
     genPhotons.clear();
     std::vector<std::vector<const reco::Candidate*>> bTree; //a vector to contain the tree
     bool initial = true;
@@ -70,21 +70,21 @@ std::vector<std::vector<const reco::Candidate*>> BDecayAnalyzer::analyzeBDecays(
                       std::vector<int> phiDecay;
                       const reco::Candidate* phi = lineage.back()-> daughter(i);
                       
-                      //std::cout << " Phi decay, number of daughters: " <<  phi -> numberOfDaughters() << std::endl;
-                      //std::cout << "Phi daughters: " ;
+                      std::cout << " Phi decay, number of daughters: " <<  phi -> numberOfDaughters() << std::endl;
+                      std::cout << "Phi daughters: " ;
                       for( size_t dauPhi = 0; dauPhi < phi -> numberOfDaughters(); ++dauPhi ){
-                        //std::cout << phi -> daughter(dauPhi)->pdgId() << " " ;
+                        std::cout << phi -> daughter(dauPhi)->pdgId() << " " ;
                         phiDecay.push_back( phi ->daughter(dauPhi)->pdgId() );
                     
                       }
                       std::cout << std::endl;
                       
-                      if( DecayTools::isSameChannel(phiDecay, DecayTools::MuMu)){
-                        
-                        genMuons.push_back(phi->daughter(0));
-                        genMuons.push_back(phi->daughter(1));
+                      if( DecayTools::isSameChannel(channel, phiDecay )){
+                    
+                        phiProducts.push_back(phi->daughter(0));
+                        phiProducts.push_back(phi->daughter(1));
                       }
-
+                      
                     }
 
                     if(lineage.back()-> daughter(i) ->pdgId()  == 22){
@@ -113,10 +113,13 @@ std::vector<std::vector<const reco::Candidate*>> BDecayAnalyzer::analyzeBDecays(
 }
 
 bool BDecayAnalyzer::analyzeEvent( edm::EventID evId){
-  if (genMuons.size() != 2 || genPhotons.size() != 1) {
+
+  if (phiProducts.size() != 2 || genPhotons.size() != 1) {
+
     std::cout << "Skipping event: " << evId << " (condition not met)" << std::endl;
     return false;  
   }
+
   return true;
 }
 

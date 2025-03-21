@@ -9,17 +9,17 @@
 class BDecayAnalyzer {
 public:
     BDecayAnalyzer();
-    std::vector<const reco::Candidate*> getMuons();
+    std::vector<const reco::Candidate*> getPhiProducts();
     std::vector<const reco::Candidate*> getPhotons();
-    std::vector<std::vector<const reco::Candidate*>> analyzeBDecays(const std::vector<reco::GenParticle>& genParticles);
+    std::vector<std::vector<const reco::Candidate*>> analyzeBDecays(const std::vector<reco::GenParticle>&, const std::vector<int>);
 
     void printTheTree( std::vector<std::vector<const reco::Candidate*>> );
-    bool analyzeEvent ( edm::EventID );
+    bool analyzeEvent( edm::EventID );
 
 private:
 
     edm::EDGetTokenT<std::vector<reco::GenParticle>> genParticleToken;
-    std::vector<const reco::Candidate*> genMuons;
+    std::vector<const reco::Candidate*> phiProducts;
     std::vector<const reco::Candidate*> genPhotons;
 };
 

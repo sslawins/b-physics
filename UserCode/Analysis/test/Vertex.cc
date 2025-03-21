@@ -21,7 +21,7 @@ int Vertex(){
 
     std::cout << "PV: (" << pv.X() << ", " << pv.Y() << ", " << pv.Z() << ")" << std::endl;
     std::cout << "PCA: (" << pca.X() << ", " << pca.Y() << ", " << pca.Z() << ")" << std::endl;
-    std::cout << "Minimalna odległość: " << minDistance << std::endl;
+    std::cout << "Minimum distance: " << minDistance << std::endl;
 
     return 0;
 }

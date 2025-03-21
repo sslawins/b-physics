@@ -11,8 +11,7 @@ process = cms.Process("MojaAnaliza")
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1)
 process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(False))
-
-# Alibordi's first  attempt - MuMuGamma
+# Alibordi's first smaples - MuMuGamma
 #dataDir = '/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToMuMuGamma_14_0_15_patch1_25_09_2024/TSG-Run3Summer22EEGS_Run2022_BsToMuMuGamma_14_0_15_patch1_25_09_2024/BsToMuMuGamma_14_0_15_patch1_25_09_2024/240925_134701/0000/'
 # Mu Mu Gamma
 #dataDir = '/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToMuMuGamma_14_0_17_22_10_2024/TSG-Run3Summer22EEGS_Run2022_BsToMuMuGamma_14_0_17_22_10_2024/BsToMuMuGamma_14_0_17_22_10_2024/241022_160351/0000/'
@@ -33,7 +32,6 @@ print('Number of files: ', len(files))
 
 # input files (up to 255 files accepted)
 
-#process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring("/store/data/Run2023D/ParkingDoubleMuonLowMass0/MINIAOD/22Sep2023_v1-v1/60000/02fadc7b-229b-4d30-88e5-1934a4533bff.root") )
 #process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring("file:/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToPhiGamma_14_0_17_20_10_2024/TSG-Run3Summer22EEGS-000_Run2022_BsToPhiGamma_14_0_17_20_10_2024/BsToPhiGamma_14_0_17_20_10_2024/241020_112334/0000/private_BsToPhiGamma_Run3Summer22EEGS_999.root") )
 process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring(files) )
 process.source.skipEvents = cms.untracked.uint32(0)
@@ -54,7 +52,7 @@ process.MessageLogger.suppressWarning  = cms.untracked.vstring('Geometry','After
 process.options = cms.untracked.PSet( wantSummary=cms.untracked.bool(False))
 
 process.analiza= cms.EDAnalyzer("PVdistance",
-  outHist = cms.string('histos_PVdistance_18_03.root'),
+  outHist = cms.string('rootOutputs/histos_PVdistance4.root'),
   trg = cms.vstring( 'HLT_DoubleMu4_3_LowMass_v1')
 )
 

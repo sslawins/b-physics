@@ -20,6 +20,7 @@ public:
     bool Passed(const std::string& );
 
     bool checkTriggers( const edm::Event& , bool print = false );
+    void printAllPaths( std::ofstream&);
 
 };
 
