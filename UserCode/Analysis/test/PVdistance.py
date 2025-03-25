@@ -37,7 +37,7 @@ print('Number of files: ', len(files))
 #process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring("file:/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToPhiGamma_14_0_17_20_10_2024/TSG-Run3Summer22EEGS-000_Run2022_BsToPhiGamma_14_0_17_20_10_2024/BsToPhiGamma_14_0_17_20_10_2024/241020_112334/0000/private_BsToPhiGamma_Run3Summer22EEGS_999.root") )
 process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring(files) )
 process.source.skipEvents = cms.untracked.uint32(0)
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(500000)) #
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10)) #
 
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('Configuration.Geometry.GeometryDB_cff')
@@ -54,8 +54,11 @@ process.MessageLogger.suppressWarning  = cms.untracked.vstring('Geometry','After
 process.options = cms.untracked.PSet( wantSummary=cms.untracked.bool(False))
 
 process.analiza= cms.EDAnalyzer("PVdistance",
-  outHist = cms.string('histos_PVdistance_18_03.root'),
-  trg = cms.vstring( 'HLT_DoubleMu4_3_LowMass_v1')
+  outHist = cms.string('histos_PVdistance_test.root'),
+  trg = cms.vstring('HLT_DoubleMu4_3_Bs_v15', 'HLT_DoubleMu4_3_LowMass_v1',
+                    'HLT_DoubleMu4_LowMass_Displaced_v1',
+                    'HLT_DoubleMu4_3_Photon4_BsToMMG_v1',
+                    'HLT_DoubleMu4_3_Displaced_Photon4_BsToMMG_v1')
 )
 
 process.MyPath = cms.Path(process.analiza)

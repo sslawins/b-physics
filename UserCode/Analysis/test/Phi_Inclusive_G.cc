@@ -54,11 +54,11 @@
 #include <vector>
 #include <stack>
 
-#include "BDecayAnalyzer.h"
-#include "HLTdecision.h"
-#include "MuonMatcher.h"
-#include "DecayTools.h"
-#include "ParticleMatcher.h"
+#include "interface/BDecayAnalyzer.h"
+#include "interface/HLTdecision.h"
+#include "interface/MuonMatcher.h"
+#include "interface/DecayTools.h"
+#include "interface/ParticleMatcher.h"
 
 using namespace std;
 
