@@ -237,7 +237,7 @@ void PVdistance::analyze(
   bool accepted = HLTdecision.checkTriggers(ev, true); //print = true
   //if(!accepted) return ;
 
-  ///////////////////////////////Trigger fired
+  ///////////////////////////////Trigger was fired
   BDecayAnalyzer bAnalyzer;
   std::vector<std::vector<const reco::Candidate*>> tree = bAnalyzer.analyzeBDecays(genPar, DecayTools::MuMu);
   genPhotons = bAnalyzer.getPhotons();
@@ -246,7 +246,7 @@ void PVdistance::analyze(
   // print the family tree
   bAnalyzer.printTheTree(tree);
   
-  ///////////////////////////////Trigger fired AND the desired decay occured
+  ///////////////////////////////Trigger was fired AND the desired decay occurred
   ParticleMatcher muonMatcher( recoMuons, genMuons, 0.01);
   muonMatcher.matchRecoToGen();
   muonMatcher.printMatchedParticles();
@@ -254,7 +254,7 @@ void PVdistance::analyze(
   if(!muonMatcher.isSuccessful()) return;
   
 
-  //////////////////////////////Trigger fired AND muons matched
+  //////////////////////////////Trigger was fired AND muons were matched
   ParticleMatcher photonMatcher( recoPhotons, genPhotons, 0.02);
   photonMatcher.matchRecoToGen();
   photonMatcher.printMatchedParticles();
@@ -263,14 +263,17 @@ void PVdistance::analyze(
 
   std::vector< const reco::Candidate*> matchedMuons   = muonMatcher.getMatched();
   std::vector< const reco::Candidate*> matchedPhotons = photonMatcher.getMatched();
+
+  //All muons, provided they are reconstructed
   hMuMu_vz_allReco->Fill (abs(matchedMuons[0]->vz() - matchedMuons[1]->vz()));
 
-  /////////////////////////////Trigger fired AND muons matched AND photons matched
+  /////////////////////////////Trigger was fired AND muons were matched AND photon was matched
   if( muonMatcher.isSuccessful() 
       && bAnalyzer.analyzeEvent(ev.id()) 
       && accepted 
       && photonMatcher.isSuccessful() ){
-
+    
+    //reconstructable events
     hMuMu_vz ->Fill(abs(matchedMuons[0]->vz() - matchedMuons[1]->vz()));
 
     ////////////////// PV /////////////////
@@ -280,12 +283,16 @@ void PVdistance::analyze(
     for( const auto& vertex : PVertices){
       std::cout << vertex.x() << "  " << vertex.y() << "  " << vertex.z() << "  " << std::endl;
     }
-
-    //PV - the first out of the list
-    math::XYZPoint pv     = PVertices[0].position();
-    math::XYZPoint pv_gen = tree[0].back()->vertex();
-    math::XYZPoint sv_test  = matchedMuons[0]->vertex();
-    math::XYZPoint svG      = genMuons[0]->vertex();
+  
+    math::XYZPoint pv     = PVertices[0].position();    // recoPV - the first out of the list
+    math::XYZPoint pv_gen = tree[0].back()->vertex();   //vertex of the Bs0 meson
+                                                        //the last one from the first row of the tree
+    math::XYZPoint sv_test  = matchedMuons[0]->vertex();//Candidate::vertex() method (to check the difference)
+    math::XYZPoint svG      = genMuons[0]->vertex();    //vertex of the muons from the phi decay
+    
+    math::XYZPoint svG_photon = genPhotons[0]->vertex(); //vertex of the photon from the Bs0 decay
+    math::XYZPoint svG_phi1   = tree[0].back()->daughter(0)->vertex(); //vertex of the photon or phi from the Bs0 decay
+    math::XYZPoint svG_phi2   = tree[0].back()->daughter(1)->vertex(); //vertex of the photon ot phi from the Bs0 decay
 
     math::XYZVectorD pMuMu      = matchedMuons[0]->momentum() + matchedMuons[1]->momentum();
     math::XYZVectorD pMuMu_gen  = genMuons[0]->momentum() + genMuons[1]->momentum();
@@ -315,6 +322,10 @@ void PVdistance::analyze(
       math::XYZPoint fittedSV = muonVertex.position();
       std::cout << "Gen muons' SV:    " << "(" << svG.x() 
                 << " , " << svG.y()     << " , " << svG.z() << ")" << std::endl;
+      
+      std::cout << "Gen photon's SV:          " << svG_photon << std::endl;
+      std::cout << "Gen Bs0's daughter[0] SV: " << svG_phi1 << std::endl;
+      std::cout << "Gen Bs0's daughter[1] SV: " << svG_phi2 << std::endl;
 
       for( const auto& muon : matchedMuons){
         std::cout << "Matched muons' SV:" << "(" << muon->vertex().x() << ", " << muon->vertex().y()
@@ -347,9 +358,8 @@ void PVdistance::analyze(
       std::cout<< "WithGamma:" << "(" << pca_withGamma.X() << ", " << pca_withGamma.Y() << ", " << pca_withGamma.Z() << ")" << std::endl;
 
       /////////////////////////////// p_{\mu\mu} vs p_{\gamma}
-      //direction of the Bs0 meson
 
-      math::XYZVectorD bsDirection = (fittedSV - pv).Unit();
+      math::XYZVectorD bsDirection = (fittedSV - pv).Unit(); //direction of the Bs0 meson
       math::XYZVectorD pMuMuT = pMuMu - bsDirection.Dot(pMuMu)*bsDirection;
       math::XYZVectorD pGammaT = matchedPhotons[0]->momentum() - bsDirection.Dot(matchedPhotons[0]->momentum())*bsDirection;
 
