@@ -21,13 +21,26 @@ dataDir = '/eos/cms/store/group/phys_bphys/privateMC_ForBsMMGAnalysis/TrackingVe
 lsCommand = 'ls -1 ' + dataDir + '| grep root'
 #print('Command: ', lsCommand)
 
-dir = subprocess.Popen(lsCommand, stdout=subprocess.PIPE, shell=True, text=True)
-lsOutput = dir.communicate()[0]
+base_dir = '/eos/cms/store/group/phys_bphys/privateMC_ForBsMMGAnalysis/TrackingVertexing/Private_BsToPhiGamma_MCTunesRun3ECM13p6TeV/BsToPhiGamma_CMSSW_12_4_11_patch3_06_12_2024/241206_105826/'
+
+dataDirs = [
+    os.path.join(base_dir, d) for d in os.listdir(base_dir)
+    if os.path.isdir(os.path.join(base_dir, d))
+]
+
+for d in dataDirs:
+    print(d)
 
 files = []
-for f in lsOutput.split():
-    #print(dataDir + f)
-    files.append('file:' + dataDir + f)  # Full path to the files with 'file:' prefix
+
+
+for dataDir in dataDirs:
+    lsCommand = f'ls -1 {dataDir} | grep root'
+    dir = subprocess.Popen(lsCommand, stdout=subprocess.PIPE, shell=True, text=True)
+    lsOutput = dir.communicate()[0]
+    
+    for f in lsOutput.split():
+        files.append(f'file:{os.path.join(dataDir, f)}')   # Full path to the files with 'file:' prefix
 
 print('Number of files: ', len(files))
 
@@ -37,7 +50,7 @@ print('Number of files: ', len(files))
 #process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring("file:/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToPhiGamma_14_0_17_20_10_2024/TSG-Run3Summer22EEGS-000_Run2022_BsToPhiGamma_14_0_17_20_10_2024/BsToPhiGamma_14_0_17_20_10_2024/241020_112334/0000/private_BsToPhiGamma_Run3Summer22EEGS_999.root") )
 process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring(files) )
 process.source.skipEvents = cms.untracked.uint32(0)
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10)) #
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1500000)) #
 
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('Configuration.Geometry.GeometryDB_cff')
@@ -54,7 +67,7 @@ process.MessageLogger.suppressWarning  = cms.untracked.vstring('Geometry','After
 process.options = cms.untracked.PSet( wantSummary=cms.untracked.bool(False))
 
 process.analiza= cms.EDAnalyzer("PVdistance",
-  outHist = cms.string('histos_PVdistance_test.root'),
+  outHist = cms.string('histos_PVdistance.root'),
   trg = cms.vstring('HLT_DoubleMu4_3_Bs_v15', 'HLT_DoubleMu4_3_LowMass_v1',
                     'HLT_DoubleMu4_LowMass_Displaced_v1',
                     'HLT_DoubleMu4_3_Photon4_BsToMMG_v1',

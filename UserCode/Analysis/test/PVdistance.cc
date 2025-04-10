@@ -114,6 +114,15 @@ private:
   TH1D *h_pGT_pMMT_ratio;
   TH1D *h_alfa;
   TH1D *h_beta;
+  TH1D *h_pGT_pMM_angle;
+
+  TH1D *hVtxProbMuMu;
+  TH1D *hVtxProbMuMuG;
+
+  TH1D *hRecoMuons_RecoPhotonDir_GenPhotonMag;
+  TH1D *hRecoMuons_GenPhotonDir_RecoPhotonMag;
+  TH1D *hRecoPhotonFourMomentaMass;
+  TH1D *hGenPhotonFourMomentaMass;
 
 };
 
@@ -143,28 +152,42 @@ PVdistance::~PVdistance()
 void PVdistance::beginJob()
 {
 
-  hPhiMass = new TH1D("hPhiMass", "Reconstruction of #Phi ; M_{inv} [GeV]; Counts", 3000 , 0.9, 1.2);
+  hPhiMass = new TH1D("hPhiMass", "Reconstruction of #Phi ; M_{inv} [GeV]; Events", 3000 , 0.9, 1.2);
 
-  hPCAz_testSV = new TH1D("hPCAz_testSV", "|PCA-PV|_{z} calculated using Candidate::vertex() method; Distance [cm]; #Events", 200, 0., 0.2);
+  hPCAz_testSV = new TH1D("hPCAz_testSV", "|PCA-PV|_{z} calculated using Candidate::vertex() method; Distance [cm]; Events", 200, 0., 0.2);
   
-  hPCAz = new TH1D("hPCAz", "|PCA-PV|_{z}; Distance [cm]; #Events", 2000, 0., 1.);
-  hPCA = new TH1D("hPCA", "|PCA-PV|; Distance [cm]; #Events", 2000, 0., 1.);
-  hPCA_T = new TH1D("hPCA_T", "|PCA-PV|_{T}; Distance [cm]; #Events", 2000, 0., 1.);
-  hPCAz_true = new TH1D("hPCAz_true", "|PCA-PV|_{z}; Distance [cm]; #Events", 2000, 0., 0.2);
-  hPCA_true = new TH1D("hPCA_true", "|PCA-PV|; Distance [cm]; #Events", 2000, 0., 0.2);
-  hPCA_T_true = new TH1D("hPCA_T_true", "|PCA-PV|_{T}; Distance [cm]; #Events", 2000, 0., 0.2);
+  hPCAz = new TH1D("hPCAz", "|PCA-PV|_{z}; Distance [cm]; Events", 2000, 0., 1.);
+  hPCA = new TH1D("hPCA", "|PCA-PV|; Distance [cm]; Events", 2000, 0., 1.);
+  hPCA_T = new TH1D("hPCA_T", "|PCA-PV|_{T}; Distance [cm]; Events", 2000, 0., 1.);
+  hPCAz_true = new TH1D("hPCAz_true", "|PCA-PV|_{z}; Distance [cm]; Events", 2000, 0., 0.2);
+  hPCA_true = new TH1D("hPCA_true", "|PCA-PV|; Distance [cm]; Events", 2000, 0., 0.2);
+  hPCA_T_true = new TH1D("hPCA_T_true", "|PCA-PV|_{T}; Distance [cm]; Events", 2000, 0., 0.2);
 
-  hPvSv = new TH1D("hPvSv", "|SV-PV|; Distance [cm]; #Events", 4000, 0.,4.);
-  hMuMu_vz = new TH1D("hMuMu_vz", "|delta vz|; Distance [cm]; #Events", 500000, 0.,5.);
-  hMuMu_vz_allReco = new TH1D("hMuMu_vz_allReco", "|v_{\\mu^+, z}-v_{\\mu^-, z}|; Distance [cm]; #Events", 500000, 0.,5.);
+  hPvSv = new TH1D("hPvSv", "|SV-PV|; Distance [cm]; Events", 4000, 0.,4.);
+  hMuMu_vz = new TH1D("hMuMu_vz", "|delta vz|; Distance [cm]; Events", 500000, 0.,5.);
+  hMuMu_vz_allReco = new TH1D("hMuMu_vz_allReco", "|v_{\\mu^+, z}-v_{\\mu^-, z}|; Distance [cm]; Events", 500000, 0.,5.);
 
-  hPVequalToSV = new TH1D("hPVequalToSV", "Number of events where PV^{gen}=SV^{gen}; N_{PV}; #Events", 3, -0.5, 2.5);
-  hNofPV = new TH1D("hNofPV", "Number of PV^{reco}, fully reconstructed events; N_{PV}; #Events", 5, -0.5, 4.5);
+  hPVequalToSV = new TH1D("hPVequalToSV", "Number of events where PV^{gen}=SV^{gen}; N_{PV}; Events", 3, -0.5, 2.5);
+  hNofPV = new TH1D("hNofPV", "Number of PV^{reco}, fully reconstructed events; N_{PV}; Events", 5, -0.5, 4.5);
 
   h_pGT_pMMT = new TH2D("h_pGT_pMMT", "Reconstructed transverse momentum of \\mu\\mu vs \\gamma; p_{\\mu\\mu} [GeV]; p_{\\gamma} [GeV]", 700, 0, 70, 700, 0, 70);
-  h_pGT_pMMT_ratio = new TH1D("h_pGT_pMMT_ratio", "Ratio of (p_{\\mu\\mu}-p_{\\gamma})/p_{\\mu\\mu}; Ratio; #Events", 100, 0, 10);
-  h_alfa = new TH1D("h_alfa", "Scaling factor; \\alfa; #Events", 2000, -10., 10.);
-  h_beta = new TH1D("h_beta", "Scaling factor; \\beta; #Events", 2000, -10., 10.);
+  h_pGT_pMMT_ratio = new TH1D("h_pGT_pMMT_ratio", "Ratio of (p_{\\mu\\mu}-p_{\\gamma})/p_{\\mu\\mu}; Ratio; Events", 100, 0, 10);
+  h_alfa = new TH1D("h_alfa", "Scaling factor; \\alfa; Events", 2000, -10., 10.);
+  h_beta = new TH1D("h_beta", "Scaling factor; \\beta; Events", 2000, -10., 10.);
+  h_pGT_pMM_angle = new TH1D("h_pGT_pMM_angle", "cos(p_{\\gamma,T}; cos(\\{alfa}); Events", 1000, -1, 1);
+
+  //PRESELCTION
+  hVtxProbMuMu = new TH1D("hVtxProbMuMu", "Vtx prob of muons; Vtx prob; Events", 100, 0., 1.);
+  hVtxProbMuMuG = new TH1D("hVtxProbMuMuG", "Vtx prob of muons and photon; Vtx prob; Events", 100, 0., 1.);
+
+  hRecoMuons_RecoPhotonDir_GenPhotonMag = new TH1D("hRecoMuons_RecoPhotonDir_GenPhotonMag", 
+    "Reco muons, reco photon direction, gen photon magnitude; M_{inv} [GeV]; Counts", 3000, 0, 10);
+  hRecoMuons_GenPhotonDir_RecoPhotonMag = new TH1D("hRecoMuons_GenPhotonDir_RecoPhotonMag", 
+    "Reco muons, gen photon direction, reco photon magnitude; M_{inv} [GeV]; Counts", 3000, 0, 10);
+  hRecoPhotonFourMomentaMass = new TH1D("hRecoPhotonFourMomentaMass", 
+    "Invariant mass of reco muons and reco photon; M_{inv} [GeV]; Counts", 3000, 0, 10);
+  hGenPhotonFourMomentaMass = new TH1D("hGenPhotonFourMomentaMass", 
+    "Invariant mass of reco muons and gen photon; M_{inv} [GeV]; Counts", 3000, 0, 10);
 
   cout << "HERE PVdistance::beginJob()" << endl;
 }
@@ -192,6 +215,15 @@ void PVdistance::endJob()
   h_pGT_pMMT_ratio -> Write();
   h_alfa -> Write();
   h_beta -> Write();
+  h_pGT_pMM_angle -> Write();
+  hVtxProbMuMu -> Write();
+  hVtxProbMuMuG -> Write();
+
+
+  hRecoMuons_RecoPhotonDir_GenPhotonMag->Write();
+  hRecoMuons_GenPhotonDir_RecoPhotonMag->Write();
+  hRecoPhotonFourMomentaMass->Write();
+  hGenPhotonFourMomentaMass->Write();
 
   myRootFile.Close();
 
@@ -212,6 +244,14 @@ void PVdistance::endJob()
   delete h_pGT_pMMT_ratio;
   delete h_alfa;
   delete h_beta;
+  delete hVtxProbMuMu;
+  delete hVtxProbMuMuG;
+  delete h_pGT_pMM_angle;
+
+  delete hRecoMuons_RecoPhotonDir_GenPhotonMag;
+  delete hRecoMuons_GenPhotonDir_RecoPhotonMag;
+  delete hRecoPhotonFourMomentaMass;
+  delete hGenPhotonFourMomentaMass;
 
   cout << "HERE PVdistance::endJob()" << endl;
 }
@@ -266,7 +306,13 @@ void PVdistance::analyze(
 
   //All muons, provided they are reconstructed
   hMuMu_vz_allReco->Fill (abs(matchedMuons[0]->vz() - matchedMuons[1]->vz()));
+  ////////////////// PV /////////////////
+  const std::vector<reco::Vertex> & PVertices = ev.get(thePVToken);  
 
+  std::cout << "Primary vertices reco: " << std::endl;
+  for( const auto& vertex : PVertices){
+    std::cout << vertex.position() << "  " << "Number of tracks"<< vertex.tracksSize() <<std::endl;
+  }
   /////////////////////////////Trigger was fired AND muons were matched AND photon was matched
   if( muonMatcher.isSuccessful() 
       && bAnalyzer.analyzeEvent(ev.id()) 
@@ -276,23 +322,14 @@ void PVdistance::analyze(
     //reconstructable events
     hMuMu_vz ->Fill(abs(matchedMuons[0]->vz() - matchedMuons[1]->vz()));
 
-    ////////////////// PV /////////////////
-    const std::vector<reco::Vertex> & PVertices = ev.get(thePVToken);  
 
-    std::cout << "Primary vertices reco: " << std::endl;
-    for( const auto& vertex : PVertices){
-      std::cout << vertex.x() << "  " << vertex.y() << "  " << vertex.z() << "  " << std::endl;
-    }
   
     math::XYZPoint pv     = PVertices[0].position();    // recoPV - the first out of the list
     math::XYZPoint pv_gen = tree[0].back()->vertex();   //vertex of the Bs0 meson
                                                         //the last one from the first row of the tree
-    math::XYZPoint sv_test  = matchedMuons[0]->vertex();//Candidate::vertex() method (to check the difference)
+    //math::XYZPoint sv_test  = matchedMuons[0]->vertex();//Candidate::vertex() method (to check the difference)
     math::XYZPoint svG      = genMuons[0]->vertex();    //vertex of the muons from the phi decay
-    
-    math::XYZPoint svG_photon = genPhotons[0]->vertex(); //vertex of the photon from the Bs0 decay
-    math::XYZPoint svG_phi1   = tree[0].back()->daughter(0)->vertex(); //vertex of the photon or phi from the Bs0 decay
-    math::XYZPoint svG_phi2   = tree[0].back()->daughter(1)->vertex(); //vertex of the photon ot phi from the Bs0 decay
+
 
     math::XYZVectorD pMuMu      = matchedMuons[0]->momentum() + matchedMuons[1]->momentum();
     math::XYZVectorD pMuMu_gen  = genMuons[0]->momentum() + genMuons[1]->momentum();
@@ -300,7 +337,7 @@ void PVdistance::analyze(
 
     std::cout<< "PV GEN:           " << "(" << pv_gen.X() << ", " << pv_gen.Y() << ", " << pv_gen.Z() << ")" << std::endl;
 
-    math::XYZPoint pca_test       = DecayTools::pca(pv, sv_test, pMuMu);
+    //math::XYZPoint pca_test       = DecayTools::pca(pv, sv_test, pMuMu);
     math::XYZPoint pca_gengen     = DecayTools::pca(pv_gen, svG, pMuMu_gen);
     math::XYZPoint pca_withGamma  = DecayTools::pca(pv_gen, svG, pMuMuGamma);
 
@@ -318,24 +355,25 @@ void PVdistance::analyze(
       KalmanVertexFitter kvf(true);
 
       reco::Vertex muonVertex = TransientVertex(kvf.vertex(muonTTs));
-
+      double probability = TMath::Prob(muonVertex.chi2(),muonVertex.ndof());
+      hVtxProbMuMu ->Fill( probability );
+      std::cout << "Vtx prob of muons: " << probability << std::endl;
       math::XYZPoint fittedSV = muonVertex.position();
+
+      /*
       std::cout << "Gen muons' SV:    " << "(" << svG.x() 
                 << " , " << svG.y()     << " , " << svG.z() << ")" << std::endl;
       
-      std::cout << "Gen photon's SV:          " << svG_photon << std::endl;
-      std::cout << "Gen Bs0's daughter[0] SV: " << svG_phi1 << std::endl;
-      std::cout << "Gen Bs0's daughter[1] SV: " << svG_phi2 << std::endl;
 
       for( const auto& muon : matchedMuons){
         std::cout << "Matched muons' SV:" << "(" << muon->vertex().x() << ", " << muon->vertex().y()
                 << ", " << muon->vertex().z() << ")"
                 << std::endl;
-      }
+      }*/
 
       math::XYZPoint pca_reco = DecayTools::pca(pv, fittedSV, pMuMu);
 
-      hPCAz_testSV ->Fill(abs(pca_test.z() - pv.z()));
+      //hPCAz_testSV ->Fill(abs(pca_test.z() - pv.z()));
       
       hPCA -> Fill(sqrt((pca_reco - pv).Mag2()));
       hPCA_T -> Fill(sqrt((pca_reco - pv).Perp2()));
@@ -352,7 +390,7 @@ void PVdistance::analyze(
       std::cout<< "Fitted SV:" << "(" << fittedSV.X() << ", " << fittedSV.Y() << ", " << fittedSV.Z() << ")" << std::endl;
       std::cout<< "/////////////////////////////"  << std::endl;
       std::cout<< "True PCA: " << "(" << pca_gengen.X() << ", " << pca_gengen.Y() << ", " << pca_gengen.Z() << ")" << std::endl;
-      std::cout<< "PCA:      " << "(" << pca_test.X() << ", " << pca_test.Y() << ", " << pca_test.Z() << ")" << std::endl;
+      //std::cout<< "PCA:      " << "(" << pca_test.X() << ", " << pca_test.Y() << ", " << pca_test.Z() << ")" << std::endl;
       std::cout<< "PCA_reco: " << "(" << pca_reco.X() << ", " << pca_reco.Y() << ", " << pca_reco.Z() << ")" << std::endl;
       std::cout<< "/////////////////////////////"  << std::endl;
       std::cout<< "WithGamma:" << "(" << pca_withGamma.X() << ", " << pca_withGamma.Y() << ", " << pca_withGamma.Z() << ")" << std::endl;
@@ -371,10 +409,58 @@ void PVdistance::analyze(
       double beta = - pMuMuT.Mag2() / pGammaT.Dot(pMuMuT);
       h_alfa->Fill(alfa);
       h_beta->Fill(beta);
+      h_pGT_pMM_angle->Fill(pGammaT.Dot(pMuMuT)/(pGammaT.R()*pMuMuT.R()));
       
-    }
+      ////////////////////// Invariant mass
+      // Calculate the invariant mass of the Bs meson
 
+
+      if (photonMatcher.isSuccessful()) {
+        // Add reco muons
+        std::vector<const reco::Candidate*> recoMuonsWithRecoPhoton;
+        std::vector<const reco::Candidate*> recoMuonsWithGenPhoton;
+        
+
+        recoMuonsWithRecoPhoton.insert(recoMuonsWithRecoPhoton.end(), matchedMuons.begin(), matchedMuons.end());
+        recoMuonsWithGenPhoton.insert(recoMuonsWithGenPhoton.end(), matchedMuons.begin(), matchedMuons.end());
+        
+        
+        // Reco muons reco photon
+        const reco::Candidate* recoPhotonAsMuon = dynamic_cast<const reco::Candidate*>(matchedPhotons[0]);
+        if (recoPhotonAsMuon) {
+          recoMuonsWithRecoPhoton.push_back(recoPhotonAsMuon);
+        }
+        auto recoPhotonFourMomenta = DecayTools::fourMomenta(recoMuonsWithRecoPhoton, DecayTools::MuMuGmasses);
+
+        // Reco muons gen photon
+        recoMuonsWithGenPhoton.push_back(genPhotons[0]);
+        auto genPhotonFourMomenta = DecayTools::fourMomenta(recoMuonsWithGenPhoton, DecayTools::MuMuGmasses);
+       
+        // reco muons, reco photon direction, gen photon magnitude
+        double P4recoDirGenMag = DecayTools::scaledInvariant(matchedMuons, genPhotons[0], matchedPhotons[0], DecayTools::MuMuGmasses);
+        // reco muons, gen photon direction, reco photon magnitude
+        double P4recoMagGenDir = DecayTools::scaledInvariant(matchedMuons, matchedPhotons[0], genPhotons[0], DecayTools::MuMuGmasses);
+         
+        std::cout << "Invariant mass of the Bs meson: " << recoPhotonFourMomenta.M() << std::endl;
+        std::cout << "Invariant mass of the Bs meson (gen): " << genPhotonFourMomenta.M() << std::endl;
+        std::cout << "Invariant mass of the Bs meson (reco muons, reco photon direction, gen photon magnitude): " << P4recoDirGenMag << std::endl;
+        std::cout << "Invariant mass of the Bs meson (reco muons, gen photon direction, reco photon magnitude): " << P4recoMagGenDir << std::endl;
+        std::cout << "Invariant mass of the Phi meson (reco muons): " << DecayTools::invariantMass(matchedMuons, DecayTools::MuMuMasses) << std::endl;
+
+        hPhiMass ->Fill(DecayTools::invariantMass(matchedMuons, DecayTools::MuMuMasses));
+        hRecoPhotonFourMomentaMass->Fill(recoPhotonFourMomenta.M());
+        hGenPhotonFourMomentaMass->Fill(genPhotonFourMomenta.M());
+        hRecoMuons_GenPhotonDir_RecoPhotonMag->Fill(P4recoMagGenDir);
+        hRecoMuons_RecoPhotonDir_GenPhotonMag->Fill(P4recoDirGenMag);
+
+      }
+
+      
+      }
   }
+
+  
+
   cout <<"*** Analyze event: " << ev.id() <<" analysed event count:" << ++theEventCount << endl;
 }
 

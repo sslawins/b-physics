@@ -11,14 +11,9 @@ process = cms.Process("MojaAnaliza")
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1)
 process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(False))
-# first samples - MuMuGamma
-#dataDir = '/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToMuMuGamma_14_0_15_patch1_25_09_2024/TSG-Run3Summer22EEGS_Run2022_BsToMuMuGamma_14_0_15_patch1_25_09_2024/BsToMuMuGamma_14_0_15_patch1_25_09_2024/240925_134701/0000/'
-# Mu Mu Gamma
-#dataDir = '/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToMuMuGamma_14_0_17_22_10_2024/TSG-Run3Summer22EEGS_Run2022_BsToMuMuGamma_14_0_17_22_10_2024/BsToMuMuGamma_14_0_17_22_10_2024/241022_160351/0000/'
-#Phi Gamma
+
 #dataDir = '/eos/cms/store/group/phys_bphys/privateMC_ForBsMMGAnalysis/TrackingVertexing/Private_BsToPhiGamma_MCTunesRun3ECM13p6TeV/BsToPhiGamma_CMSSW_12_4_11_patch3_06_12_2024/241206_105826/0000/'
-#dataDir = '/eos/cms/store/group/phys_bphys/privateMC_ForBsMMGAnalysis/TrackingVertexing/Private_BsToPhiInclusiveGamma_MCTunesRun3ECM13p6TeV/BsToPhiInclusiveGamma_CMSSW_12_4_11_patch3_03_02_2025/250203_132515/0000/'
-'''
+dataDir = '/home/kszlezak/eos/Data/'
 lsCommand = 'ls -1 ' + dataDir + '| grep root'
 #print('Command: ', lsCommand)
 
@@ -31,32 +26,13 @@ for f in lsOutput.split():
     files.append('file:' + dataDir + f)  # Full path to the files with 'file:' prefix
 
 print('Number of files: ', len(files))
-'''
-
-dataDirs = [
-    '/eos/cms/store/group/phys_bphys/privateMC_ForBsMMGAnalysis/TrackingVertexing/Private_BsToPhiInclusiveGamma_MCTunesRun3ECM13p6TeV/BsToPhiInclusiveGamma_CMSSW_12_4_11_patch3_03_02_2025/250203_132515/0000/',
-    '/eos/cms/store/group/phys_bphys/privateMC_ForBsMMGAnalysis/TrackingVertexing/Private_BsToPhiInclusiveGamma_MCTunesRun3ECM13p6TeV/BsToPhiInclusiveGamma_CMSSW_12_4_11_patch3_03_02_2025/250203_132515/0001/',
-    '/eos/cms/store/group/phys_bphys/privateMC_ForBsMMGAnalysis/TrackingVertexing/Private_BsToPhiInclusiveGamma_MCTunesRun3ECM13p6TeV/BsToPhiInclusiveGamma_CMSSW_12_4_11_patch3_03_02_2025/250203_132515/0002/'
-]
-
-files = []
-
-
-for dataDir in dataDirs:
-    lsCommand = f'ls -1 {dataDir} | grep root'
-    dir = subprocess.Popen(lsCommand, stdout=subprocess.PIPE, shell=True, text=True)
-    lsOutput = dir.communicate()[0]
-    
-    for f in lsOutput.split():
-        files.append(f'file:{dataDir}{f}') 
-print('Number of files: ', len(files))
 
 # input files (up to 255 files accepted)
 
-#process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring("file:/eos/cms/store/group/dpg_trigger/comm_trigger/L1Trigger/OMTF/TrackingVertexing/BsToPhiGamma_14_0_17_20_10_2024/TSG-Run3Summer22EEGS-000_Run2022_BsToPhiGamma_14_0_17_20_10_2024/BsToPhiGamma_14_0_17_20_10_2024/241020_112334/0000/private_BsToPhiGamma_Run3Summer22EEGS_999.root") )
 process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring(files) )
+#process.source = cms.Source('PoolSource', fileNames ='/eos/user/k/kszlezak/Data/000a11f5-055a-4402-b35b-a1e28cabaed7.root')
 process.source.skipEvents = cms.untracked.uint32(0)
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(500000)) #
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10)) #
 
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('Configuration.Geometry.GeometryDB_cff')
@@ -72,8 +48,8 @@ process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1)
 process.MessageLogger.suppressWarning  = cms.untracked.vstring('Geometry','AfterSource','L1T')
 process.options = cms.untracked.PSet( wantSummary=cms.untracked.bool(False))
 
-process.analiza= cms.EDAnalyzer("Phi_Inclusive_G",
-  outHist = cms.string('histos_Phi_inclusive_G_18_03.root'),
+process.analiza= cms.EDAnalyzer("DataAnalysis",
+  outHist = cms.string('test.root'),
   trg = cms.vstring('HLT_DoubleMu4_3_Bs_v15', 'HLT_DoubleMu4_3_LowMass_v1',
                     'HLT_DoubleMu4_LowMass_Displaced_v1',
                     'HLT_DoubleMu4_3_Photon4_BsToMMG_v1',

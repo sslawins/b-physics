@@ -50,3 +50,7 @@
 <library file="Phi_Inclusive_G.cc src/BDecayAnalyzer.cc src/HLTdecision.cc " name="Phi_Inclusive_G">
   <flags EDM_PLUGIN="1"/>
 </library>
+
+<library file="DataAnalysis.cc src/HLTdecision.cc " name="DataAnalysis">
+  <flags EDM_PLUGIN="1"/>
+</library>
