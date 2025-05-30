@@ -31,6 +31,7 @@
 #include <vector>
 #include <stack>
 
+#include "interface/HLTdecision.h"
 
 using namespace std;
 
@@ -75,6 +76,7 @@ private:
   //B mesons momentum
   TH1D *hBPt;
   TH1D *hBssPt;
+  TH2D *hBss_Eta_Pt;
 
   //check the number of decays
   TH1D *hBsToPhiG;
@@ -138,6 +140,7 @@ private:
   TH2D *hCutsDecayGammaGen_Eta_Pt;
   TH1D *hCutsDecayGammaGenMatched_Pt;
   TH2D *hCutsDecayGammaGenMatched_Eta_Pt;
+  TH1D *hCutsVShlt;
 
   //products of phi decay -> two muons
   TH1D* hPhiDecayGen_Pt;
@@ -158,6 +161,7 @@ private:
   edm::EDGetTokenT < vector<reco::GenParticle> > theGenParticleToken;
   edm::EDGetTokenT < vector<reco::Muon> > theMuonToken;
   edm::EDGetTokenT < vector<reco::Photon> > thePhotonToken;
+  edm::EDGetTokenT < edm::TriggerResults > theTriggerResultsToken;
 
   std::vector<int> MuMuG = {22, 13, -13};
   std::vector<int> MuMu = {13, -13};
@@ -178,6 +182,7 @@ ControlChannelPhi::ControlChannelPhi(const edm::ParameterSet& conf)
   theGenParticleToken = consumes< vector<reco::GenParticle>  >( edm::InputTag("genParticles" ));
   theMuonToken = consumes< vector<reco::Muon>  >( edm::InputTag("muons"));
   thePhotonToken = consumes< vector<reco::Photon>  >( edm::InputTag("photons"));
+  theTriggerResultsToken = consumes<edm::TriggerResults>(edm::InputTag("TriggerResults", "", "HLT"));
 }
 
 ControlChannelPhi::~ControlChannelPhi()
@@ -250,6 +255,7 @@ std::vector<std::vector<const reco::Candidate*>> ControlChannelPhi::bFamilyTree(
 
                 if( isSameChannel(decay, PhiG)  ) {
                   hBssPt -> Fill (lineage.back()->pt());
+                  hBss_Eta_Pt -> Fill (lineage.back()->eta(), lineage.back()->pt());
 
                   for( size_t i = 0; i < lineage.back()->numberOfDaughters(); ++i ){
                     
@@ -365,7 +371,8 @@ void ControlChannelPhi::beginJob()
   //B mesons momentum
   hBPt = new TH1D("hBPt","Transverse momentum of B mesons ; p_{T} [GeV]; Counts",1000, 0., 100.);
   hBssPt = new TH1D("hBssPt","Transverse momentum of B_{s}^{0}, #bar{B}_{s}^{0} ; p_{T} [GeV]; Counts",1000, 0., 100.);
-  
+  hBss_Eta_Pt = new TH2D("hBssPt_Eta_Pt","Transverse momentum of B_{s}^{0}, #bar{B}_{s}^{0} ; #eta ; p_{T} [GeV]", 2000, -10, 10, 1000, 0, 100 );
+
   //check the number of decays
   hBsToPhiG = new TH1D("hBsToPhiG", "Number of B_{s}^{0}/#bar{B}_{s}^{0} #rightarrow #Phi#gamma decays; Decays per Event; Events", 6, -0.5, 5.5);
   hPhiToMuMu = new TH1D("hPhiToMuMu", "Number of #Phi #rightarrow #mu#mu decays; Decays per Event; Events", 6, -0.5, 5.5);
@@ -384,8 +391,8 @@ void ControlChannelPhi::beginJob()
   hNinit = new TH1D("hNinit","Number of b quarks that hadronized into B measons; per event; Events",10, -1.5, 8.5);
   hInitial =  new TH1D("hInitial","First particle formed by b quarks; Particle ID; Events",95, 505.5, 600.5);
   hHad =  new TH1D("hHad"," Hadronization of b quarks; Particle ID; Events",95, 505.5, 600.5); //biased
-  hBsParents =  new TH1D("hBsParents","Parents of B_{s}^{0} (#Phi#gamma); Particle ID; Events",45, 505.5, 550.5);
-  hBsAncestor =  new TH1D("hBsAncestor","First produced B meson (B_{s}^{0} #rightarrow #Phi#gamma); Particle ID; Events",45, 505.5, 550.5); 
+  hBsParents =  new TH1D("hBsParents","Parents of B_{s}^{0} (#Phi#gamma); Particle ID; Events",95, 505.5, 600.5);
+  hBsAncestor =  new TH1D("hBsAncestor","First produced B meson (B_{s}^{0} #rightarrow #Phi#gamma); Particle ID; Events",95, 505.5, 600.5); 
   
   // muons from the other side - expected to give a trigger (11)
   hCascade = new TH1D("hCascade","Muon cascade; Counts per event; Events",12, -1.5 , 10.5);
@@ -395,7 +402,7 @@ void ControlChannelPhi::beginJob()
   hCascadeGen_PtAll = new TH1D("hCascadeGen_PtAll","Muons ; p_{T} [GeV]; Events",1500, 0., 15.);
   hCascadeGen_Pt = new TH1D("hCascadeGen_Pt","Muons - only #mu^{+}#mu^{-} pairs ; p_{T} [GeV]; Events",1000, 0., 10.);
   //to explain the shape of delta R
-  hCascadeMuMuDeltaR = new TH1D("hCascadeMuMuDeltaR","Angular separation between two muons (#mu^{+}#mu^{-}); #Delta R; Events",1000, 0., 20.);
+  hCascadeMuMuDeltaR = new TH1D("hCascadeMuMuDeltaR","Angular separation between two muons (#mu^{+}#mu^{-}); #Delta R; Events",300, 0., 6.);
   hCascadeMuMuDeltaEta = new TH1D("hCascadeMuMuDeltaEta","Angular separation between two muons (#mu^{+}#mu^{-}) - #Delta #eta; #Delta #eta; Events",1000, 0. , 10.);
   hCascadeMuMuDeltaPhi = new TH1D("hCascadeMuMuDeltaPhi","Angular separation between two muons (#mu^{+}#mu^{-}) - #Delta #phi; #Delta #phi; Events",1000, 0., 6.5);
   //reco part
@@ -403,51 +410,52 @@ void ControlChannelPhi::beginJob()
   hCascadeReco_Eta_Pt = new TH2D("hCascadeReco_Eta_Pt", "Reconstructed muons (#mu^{+}#mu^{-}); #eta ; p_{T} [GeV]", 600, -3, 3, 200, 0, 20);
   //reco vs gen - to adjust the cut
   hCascade_RecoGenDeltaR = new TH1D("hCascade_RecoGenDeltaR","Reconstructed muons (#mu^{+}#mu^{-}) ;#Delta R; Events",500, 0., 2.);
-  hCascade_RecoPt_GenPt = new TH2D("hCascade_RecoPt_GenPt"," Reconstructed vs generated muons (#mu^{+}#mu^{-}); p_{T}_{reco} [GeV]; p_{T}_{gen} [GeV]; Counts",500, 0., 30., 500, 0., 30.);
+  hCascade_RecoPt_GenPt = new TH2D("hCascade_RecoPt_GenPt"," Reconstructed vs generated muons (#mu^{+}#mu^{-}); p_{T}_{reco} [GeV]; p_{T}_{gen} [GeV]; Counts",300, 0., 30., 300, 0., 30.);
 
   //Products of the Bs decay (9)
   //gen phi
   hPhiPt = new TH1D("hPhiPt","Transverse momentum of #Phi (B_{s}^{0} #rightarrow #Phi#gamma) ; p_{T} [GeV]; Events",1000, 0., 100.);
   hPhiEta = new TH1D("hPhiEta","Pseudorapidity of #Phi (B_{s}^{0} #rightarrow #Phi#gamma); #eta; Events",200, -10., 10.);
-  hPhi_Eta_Pt = new TH2D("hPhi_Eta_Pt","Pseudorapidity and transverse momentum of #Phi (B_{s}^{0} #rightarrow #Phi#gamma); #eta_{#Phi}; p_{T}_{#Phi} [GeV]; Events",200, -10., 10., 200, 0., 50.);
+  hPhi_Eta_Pt = new TH2D("hPhi_Eta_Pt","Pseudorapidity and transverse momentum of #Phi (B_{s}^{0} #rightarrow #Phi#gamma); #eta; p_{T} [GeV]; Events", 2000, -10, 10, 1000, 0, 100 );
   //gen gamma
-  hDecayGamma_Eta_Pt = new TH2D("hDecayGamma_Eta_Pt","Pseudorapidity and transverse momentum of photons (B_{s}^{0} #rightarrow #Phi#gamma); #eta_{#gamma}; p_{T}_{#gamma} [GeV]; Events",1000, -10., 10., 500, 0., 30.);
+  hDecayGamma_Eta_Pt = new TH2D("hDecayGamma_Eta_Pt","Pseudorapidity and transverse momentum of photons (B_{s}^{0} #rightarrow #Phi#gamma); #eta; p_{T} [GeV]; Events",1000, -10., 10., 500, 0., 30.);
   hDecayGamma_Pt = new TH1D("hDecayGamma_Pt","Transverse momentum of photons (B_{s}^{0} #rightarrow #Phi#gamma); p_{T} [GeV]; Events", 500., 0., 30.);
   hDecayGamma_Eta = new TH1D("hDecayGamma_Eta","Pseudorapidity of photons (B_{s}^{0} #rightarrow #Phi#gamma); #eta; Events",1000, -10., 10.);
   //reco gamma
   hDecayGammaReco_Pt = new TH1D("hDecayGammaReco_Pt", "Reconstructed photons (B_{s}^{0} #rightarrow #Phi#gamma); pT [GeV]; Counts", 500, 0, 30);
-  hDecayGammaReco_Eta_Pt = new TH2D("hDecayGammaReco_Eta_Pt","Pseudorapidity and transverse momentum of photons (B_{s}^{0} #rightarrow #Phi#gamma); #eta_{#gamma}; p_{T}_{#gamma} [GeV]; Events",700, -3.5, 3.5, 500, 0., 50.);
-  //comparison of reco and gen gamma - to ajust the cut
+  hDecayGammaReco_Eta_Pt = new TH2D("hDecayGammaReco_Eta_Pt","Pseudorapidity and transverse momentum of photons (B_{s}^{0} #rightarrow #Phi#gamma); #eta; p_{T} [GeV]; Events",700, -3.5, 3.5, 500, 0., 50.);
+  //comparison of reco and gen gamma - to adjust the cut
   hDecayGamma_RecoGenDeltaR = new TH1D("hDecayGamma_RecoGenDeltaR","Angular separation between reconstructed and generated photons (B_{s}^{0} #rightarrow #Phi#gamma); #Delta R; Events",1000, 0., 0.1);
   hDecayGamma_RecoPt_GenPt = new TH2D("hDecayGamma_RecoPt_GenPt"," Reconstructed vs generated photons (B_{s}^{0} #rightarrow #Phi#gamma); p_{T,reco} [GeV]; p_{T,gen} [GeV]; Counts",500, 0., 50., 500, 0., 50.);
 
   //with additional cuts
-  hCutsDecayGammaReco_Pt = new TH1D("hCutsDecayGammaReco_Pt", "Reconstructed photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV ; pT [GeV]; counts", 500, 0, 30);
-  hCutsDecayGammaReco_Eta_Pt = new TH2D("hCutsDecayGammaReco_Eta_Pt","Reconstructed photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV; #eta_{#gamma}; p_{T}_{#gamma} [GeV]; Events",700, -3.5, 3.5, 500, 0., 50.);
+  hCutsDecayGammaReco_Pt = new TH1D("hCutsDecayGammaReco_Pt", "Reconstructed photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV ; pT [GeV]; Counts", 500, 0, 30);
+  hCutsDecayGammaReco_Eta_Pt = new TH2D("hCutsDecayGammaReco_Eta_Pt","Reconstructed photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV; #eta; p_{T} [GeV]; Events",700, -3.5, 3.5, 500, 0., 50.);
   hCutsDecayGamma_RecoGenDeltaR = new TH1D("hCutsDecayGamma_RecoGenDeltaR","Photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV; #Delta R; Events",100, 0., 0.1);
-  hCutsDecayGamma_RecoPt_GenPt = new TH2D("hCutsDecayGamma_RecoPt_GenPt"," Photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV; p_{T,reco} [GeV]; p_{T,gen} [GeV]; Counts",500, 0., 30., 500, 0., 30.);
+  hCutsDecayGamma_RecoPt_GenPt = new TH2D("hCutsDecayGamma_RecoPt_GenPt"," Photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV; p_{T,reco} [GeV]; p_{T,gen} [GeV]; Counts",300, 0., 30., 300, 0., 30.);
 
-  hCutsDecayGammaGen_Eta_Pt = new TH2D("hCutsDecayGammaGen_Eta_Pt","Generated photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV; #eta_{#gamma}; p_{T}_{#gamma} [GeV]; Events",700, -3.5, 3.5, 500, 0., 50.);
-  hCutsDecayGammaGen_Pt = new TH1D("hCutsDecayGammaGen_Pt", "Generated photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV ; pT [GeV]; counts", 500, 0, 30);
-  hCutsDecayGammaGenMatched_Eta_Pt = new TH2D("hCutsDecayGammaGenMatched_Eta_Pt","Generated and matched photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV; #eta_{#gamma}; p_{T}_{#gamma} [GeV]; Events",700, -3.5, 3.5, 500, 0., 50.);
-  hCutsDecayGammaGenMatched_Pt = new TH1D("hCutsDecayGammaGenMatched_Pt", "Generated and matched photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV ; pT [GeV]; counts", 500, 0, 30);
+  hCutsDecayGammaGen_Eta_Pt = new TH2D("hCutsDecayGammaGen_Eta_Pt","Generated photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV; #eta; p_{T} [GeV]; Events",700, -3.5, 3.5, 500, 0., 50.);
+  hCutsDecayGammaGen_Pt = new TH1D("hCutsDecayGammaGen_Pt", "Generated photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV ; pT [GeV]; Counts", 500, 0, 30);
+  hCutsDecayGammaGenMatched_Eta_Pt = new TH2D("hCutsDecayGammaGenMatched_Eta_Pt","Generated and matched photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV; #eta; p_{T} [GeV]; Events",700, -3.5, 3.5, 500, 0., 50.);
+  hCutsDecayGammaGenMatched_Pt = new TH1D("hCutsDecayGammaGenMatched_Pt", "Generated and matched photons, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV ; p_{T} [GeV]; Counts", 500, 0, 30);
   
+  hCutsVShlt = new TH1D("hCutsVShlt","Cuts vs. HLT; ; Events",4, -0.5, 3.5);
   // products of phi decay -> two muons (5)
   //gen part
-  hPhiDecayGen_Pt = new TH1D("hPhiDecayGen_Pt", "Muons (#Phi #rightarrow #mu#mu); p_{T} [GeV]; counts", 500, 0, 30);
+  hPhiDecayGen_Pt = new TH1D("hPhiDecayGen_Pt", "Muons (#Phi #rightarrow #mu#mu); p_{T} [GeV]; Counts", 500, 0, 30);
   hPhiDecayGen_Eta_Pt = new TH2D("hPhiDecayGen_Eta_Pt", "Muons (#Phi #rightarrow #mu#mu); #eta ; p_{T} [GeV]", 1000, -10, 10, 300, 0, 30 );
   //reco part
-  hPhiDecayReco_Pt= new TH1D("hPhiDecayReco_Pt", "Reconstructed muons (#Phi #rightarrow #mu#mu); p_{T} [GeV]; counts", 500, 0, 30);
-  hPhiDecayReco_Eta_Pt = new TH2D("hPhiDecayReco_Eta_Pt", "Reconstructed muons (#Phi #rightarrow #mu#mu); #eta ; p_{T} [GeV]",600, -3., 3., 300, 0, 30 );
+  hPhiDecayReco_Pt= new TH1D("hPhiDecayReco_Pt", "Reconstructed muons (#Phi #rightarrow #mu#mu); p_{T} [GeV]; Counts", 500, 0, 30);
+  hPhiDecayReco_Eta_Pt = new TH2D("hPhiDecayReco_Eta_Pt", "Reconstructed muons (#Phi #rightarrow #mu#mu); #eta ; p_{T} [GeV]; Events",600, -3., 3., 300, 0, 30 );
   //comparison - to adjust the cut
   hPhiDecay_RecoGenDeltaR= new TH1D("hPhiDecay_RecoGenDeltaR","Angular separation between reconstructed and generated muons (#Phi #rightarrow #mu#mu); #Delta R; Events",1000, 0., 0.1);
-  hPhiDecay_RecoPt_GenPt = new TH2D("hPhiDecay_RecoPt_GenPt"," Reconstructed vs generated muons (#Phi#rightarrow #mu#mu); p_{T,reco} [GeV]; p_{T,gen} [GeV]; Counts",200, 0., 50., 200, 0., 50.);
+  hPhiDecay_RecoPt_GenPt = new TH2D("hPhiDecay_RecoPt_GenPt"," Reconstructed vs generated muons (#Phi#rightarrow #mu#mu); p_{T,reco} [GeV]; p_{T,gen} [GeV]; Counts",500, 0., 50., 500, 0., 50.);
 
   //with additional cuts
   hCutsPhiDecayReco_Pt = new TH1D("hCutsPhiDecayReco_Pt", "Reconstructed muons (#Phi #rightarrow #mu#mu, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV ); p_{T} [GeV]; Counts", 500, 0, 30);
   hCutsPhiDecayReco_Eta_Pt = new TH2D("hCutsPhiDecayReco_Eta_Pt", "Reconstructed muons (#Phi #rightarrow #mu#mu, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV); #eta ; p_{T} [GeV]",600, -3., 3., 300, 0, 30);
   hCutsPhiDecay_RecoGenDeltaR = new TH1D("hCutsPhiDecay_RecoGenDeltaR","Muons (#Phi #rightarrow #mu#mu, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV); #Delta R; Events",5000, 0., 5.);
-  hCutsPhiDecay_RecoPt_GenPt = new TH2D("hCutsPhiDecay_RecoPt_GenPt"," Muons (#Phi #rightarrow #mu#mu, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV); p_{T,reco} [GeV]; p_{T,gen} [GeV]; Counts",500, 0., 30., 500, 0., 30.);
+  hCutsPhiDecay_RecoPt_GenPt = new TH2D("hCutsPhiDecay_RecoPt_GenPt"," Muons (#Phi #rightarrow #mu#mu, |#eta_{#mu}| < 2.4, p_{T,#mu} > 4 GeV); p_{T,reco} [GeV]; p_{T,gen} [GeV]; Counts",300, 0., 30., 300, 0., 30.);
 
   cout << "HERE ControlChannelPhi::beginJob()" << endl;
 }
@@ -460,6 +468,7 @@ void ControlChannelPhi::endJob()
   //write histogram data
   hBPt-> Write();
   hBssPt-> Write();
+  hBss_Eta_Pt-> Write();
   
   hBsToPhiG-> Write();
   hPhiToMuMu-> Write();
@@ -518,6 +527,7 @@ void ControlChannelPhi::endJob()
   hCutsDecayGammaGen_Eta_Pt ->Write();
   hCutsDecayGammaGenMatched_Pt ->Write();
   hCutsDecayGammaGenMatched_Eta_Pt ->Write();
+  hCutsVShlt -> Write();
 
   hPhiDecayGen_Pt -> Write();
   hPhiDecayGen_Eta_Pt -> Write();
@@ -538,6 +548,7 @@ void ControlChannelPhi::endJob()
 
   delete hBPt;
   delete hBssPt;
+  delete hBss_Eta_Pt;
 
   delete hBsToPhiG;
   delete hPhiToMuMu;
@@ -597,6 +608,7 @@ void ControlChannelPhi::endJob()
   delete hCutsDecayGammaGen_Eta_Pt ;
   delete hCutsDecayGammaGenMatched_Pt ;
   delete hCutsDecayGammaGenMatched_Eta_Pt;
+  delete hCutsVShlt;
 
   //phi decay
   delete hPhiDecayGen_Pt;
@@ -633,6 +645,9 @@ void ControlChannelPhi::analyze(
   const std::vector<reco::GenParticle> & genPar = ev.get(theGenParticleToken);
   const std::vector<reco::Muon> & recoMuons = ev.get(theMuonToken);
   const std::vector<reco::Photon> & recoPhotons = ev.get(thePhotonToken);
+
+  HLTdecision HLTdecision(theTriggerResultsToken, ev, theConfig);
+  bool accepted = HLTdecision.checkTriggers(ev, true);
 
   std::vector<const reco::Candidate*> cascadeMuons;
   int nBs = 0;
@@ -690,11 +705,11 @@ void ControlChannelPhi::analyze(
           cout << "Muon pt (currently processed): " << current->pt() << endl;
       }
 
-      //std::cout << "Daughters of " <<current->pdgId() << ": " << std::endl;
+      std::cout << "Daughters of " <<current->pdgId() << ": " << std::endl;
       for (size_t i = 0; i < current->numberOfDaughters(); ++i) {
 
           stack.push(current->daughter(i));
-          //std::cout << current->daughter(i)->pdgId()<< "  " ;
+          std::cout << current->daughter(i)->pdgId()<< "  " ;
       }
       //std::cout << std::endl;
     }
@@ -775,7 +790,7 @@ void ControlChannelPhi::analyze(
     // find photon with the lowest delta R with the gen photon
     for (const auto& recoPh : recoPhotons)
     {
-      //cout << "Photon" << endl;
+      cout << "Photon" << endl;
       for (const reco::Candidate* genPh : genPhotons) // only one photon
       {
         hDecayGamma_RecoGenDeltaR -> Fill(reco::deltaR(recoPh, *genPh)); // to find a suitable  cut
@@ -806,9 +821,9 @@ void ControlChannelPhi::analyze(
           hPhiDecayReco_Pt-> Fill(recoMatchedMu[k]->pt());
           hPhiDecay_RecoPt_GenPt -> Fill (recoMatchedMu[k]->pt(), genMuons[k]->pt());
         
-          if( recoMatchedMu[k]-> pt() <= 4 ||  abs(recoMatchedMu[k]-> eta()) >= 2.4) {
+          /*if( recoMatchedMu[k]-> pt() <= 4 ||  abs(recoMatchedMu[k]-> eta()) >= 2.4) {
             reconstructWithCuts = false;
-          }
+          }*/
 
         }else{ reconstructWithCuts = false; }
       }
@@ -817,10 +832,10 @@ void ControlChannelPhi::analyze(
       reconstructWithCuts = false;
     }
 
-
+    std::cout << "reconstructWithCuts: " << reconstructWithCuts << std::endl;
     // for BOTH muons satisfying the conditions
-    if(reconstructWithCuts == true && recoMatchedMu.size() == 2){
-
+    //if(reconstructWithCuts == true && recoMatchedMu.size() == 2){
+    if(reconstructWithCuts == true && accepted == true && recoMatchedMu.size() == 2){
       for(unsigned int k =0 ; k < recoMatchedMu.size(); ++k){
         hCutsPhiDecay_RecoGenDeltaR-> Fill(reco::deltaR(*genMuons[k], *recoMatchedMu[k]));
         hCutsPhiDecayReco_Eta_Pt -> Fill(recoMatchedMu[k]->eta(), recoMatchedMu[k]->pt());
@@ -834,14 +849,15 @@ void ControlChannelPhi::analyze(
     }
 
     //PHOTON MATHING //////////
-    if (recoPhoton != nullptr && lowestRphoton < 0.03 ) { //reconstructed and matched photons
+    if (reconstructWithCuts == true && recoPhoton != nullptr && lowestRphoton < 0.03 ) { //reconstructed and matched photons
 
       //recoMatchedPhotons.push_back(static_cast<const reco::Photon*>(recoPhoton));
       hDecayGammaReco_Pt->Fill(recoPhoton->pt());
       hDecayGammaReco_Eta_Pt->Fill(recoPhoton->eta(), recoPhoton->pt());
       hDecayGamma_RecoPt_GenPt->Fill(recoPhoton->pt(), genPhotons[0]->pt());
 
-      if( reconstructWithCuts == true && recoMatchedMu.size() == 2){
+      //if( reconstructWithCuts == true && recoMatchedMu.size() == 2){
+      if( accepted == true && recoMatchedMu.size() == 2){
 
         //histograms with additional cuts
         hCutsDecayGamma_RecoGenDeltaR -> Fill(lowestRphoton);
@@ -851,7 +867,7 @@ void ControlChannelPhi::analyze(
 
         //generated photons
         hCutsDecayGammaGenMatched_Eta_Pt -> Fill( genPhotons[0]->eta(), genPhotons[0]->pt());
-        hCutsDecayGammaGenMatched_Pt -> Fill( genPhotons[0]->eta(), genPhotons[0]->pt());
+        hCutsDecayGammaGenMatched_Pt -> Fill(  genPhotons[0]->pt());
 
         cout << recoMatchedMu.size() << " reco muon size" << endl;
         if( recoMatchedMu[0] == nullptr) cout << "mu 1 nullprt ";

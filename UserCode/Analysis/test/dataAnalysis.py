@@ -32,7 +32,7 @@ print('Number of files: ', len(files))
 process.source = cms.Source('PoolSource', fileNames =cms.untracked.vstring(files) )
 #process.source = cms.Source('PoolSource', fileNames ='/eos/user/k/kszlezak/Data/000a11f5-055a-4402-b35b-a1e28cabaed7.root')
 process.source.skipEvents = cms.untracked.uint32(0)
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10)) #
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1)) #
 
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('Configuration.Geometry.GeometryDB_cff')
@@ -49,7 +49,7 @@ process.MessageLogger.suppressWarning  = cms.untracked.vstring('Geometry','After
 process.options = cms.untracked.PSet( wantSummary=cms.untracked.bool(False))
 
 process.analiza= cms.EDAnalyzer("DataAnalysis",
-  outHist = cms.string('test.root'),
+  outHist = cms.string('dataTestJob.root'),
   trg = cms.vstring('HLT_DoubleMu4_3_Bs_v15', 'HLT_DoubleMu4_3_LowMass_v1',
                     'HLT_DoubleMu4_LowMass_Displaced_v1',
                     'HLT_DoubleMu4_3_Photon4_BsToMMG_v1',

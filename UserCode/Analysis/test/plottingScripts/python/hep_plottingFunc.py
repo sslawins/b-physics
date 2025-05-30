@@ -11,9 +11,8 @@ import matplotlib.pyplot as plt
 import numba as nb
 import re
 
-
-
 hep.style.use("CMS")
+
 params = {'legend.fontsize': 'x-large',
               'figure.figsize': (10, 7),
               'axes.labelsize': 'x-large',

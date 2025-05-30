@@ -103,7 +103,9 @@ private:
 
   TH1D *hPhiToKplusKminus;
   TH1D *hpTrecoMuons;
-
+  TH2D *hKKGen_Eta_Pt;
+  TH1D *hKKGen_pT;
+  TH2D *hKKReco_Eta_Pt;
   TH2D *hKKpT_recoVSgen;
   TH1D *hKK_deltaR_allReco;
   TH1D *hKK_deltaR;
@@ -169,13 +171,16 @@ void Phi_Inclusive_G::beginJob()
   hPhiToKplusKminus = new TH1D("hPhiToKplusKminus", "Phi to K+K- decay", 2, -0.5, 1.5);
   hpTrecoMuons = new TH1D("hpTrecoMuons", "reco muon pt", 1000, 0, 50); //NOT FILLED YET
   
-  hKKpT_recoVSgen = new TH2D("hKKpT_recoVSgen", "K+K- reco-gen; p_{T, reco}; p_{T, gen}", 700, 0, 70, 100, 0, 70);
+  hKKGen_Eta_Pt = new TH2D("hKKGen_Eta_Pt", "K+K- gen; #eta; p_{T, gen}", 1000, -10., 10., 500, 0., 50.);
+  hKKGen_pT = new TH1D("hKKGen_pT", "K+K- gen; p_{T, gen} [GeV]; Events", 500, 0, 50);
+  hKKReco_Eta_Pt = new TH2D("hKKReco_Eta_Pt", "K+K- reco; #eta; p_{T, reco}", 1000, -10., 10., 500, 0., 50.);
+  hKKpT_recoVSgen = new TH2D("hKKpT_recoVSgen", "K+K- reco-gen; p_{T, reco}; p_{T, gen}", 500, 0, 50, 500, 0, 50);
   hKK_deltaR_allReco = new TH1D("hKK_deltaR_allReco", "K+K- deltaR, all reconstructed particles; \\Delta R; Events", 100, 0, 0.5);
-  hKK_deltaR = new TH1D("hKK_deltaR", "K+K- deltaR; \\Delta R; Events", 100, 0, 0.5);
+  hKK_deltaR = new TH1D("hKK_deltaR", "K+K- deltaR; \\Delta R; Events", 250, 0, 0.5);
   hKK_vz = new TH1D("hKK_vz", "|\\Delta v_z|; Distance [cm]; Events", 500000, 0, 5);
-  hKK_vz_allReco = new TH1D("hKK_vz_allReco", "|v_{\\mu^+, z}-v_{\\mu^-, z}|; Distance [cm]; #Events", 500000, 0.,5.);
+  hKK_vz_allReco = new TH1D("hKK_vz_allReco", "|v_{\\mu^+, z}-v_{\\mu^-, z}|; Distance [cm]; #Events", 3000, 0.,0.3);
   
-  hPhiG_deltaR = new TH1D("hPhiG_deltaR", "Phi-Gamma deltaR; \\Delta R; Events", 100, 0, 5.0);
+  hPhiG_deltaR = new TH1D("hPhiG_deltaR", "Phi-Gamma deltaR; \\Delta R; Events", 250, 0, 5.0);
   hBsKK_vz = new TH1D("hBsKK_vz", "|v_{Bs, z} - v_{KK, z}|; Distance [cm]; Events", 500, 0, 5.0);
 
   /* FOR CASCADE MUONS - IF THERE IS TIME
@@ -222,7 +227,9 @@ void Phi_Inclusive_G::endJob()
   
   hPhiToKplusKminus -> Write();
   hpTrecoMuons -> Write();
-
+  hKKGen_Eta_Pt -> Write();
+  hKKGen_pT -> Write();
+  hKKReco_Eta_Pt -> Write();
   hKKpT_recoVSgen -> Write();
   hKK_deltaR_allReco -> Write();
   hKK_deltaR -> Write();  
@@ -263,7 +270,9 @@ void Phi_Inclusive_G::endJob()
 
   delete hPhiToKplusKminus;
   delete hpTrecoMuons;
-
+  delete hKKGen_Eta_Pt;
+  delete hKKGen_pT;
+  delete hKKReco_Eta_Pt;
   delete hKKpT_recoVSgen;
   delete hKK_deltaR_allReco;
   delete hKK_deltaR;
@@ -331,7 +340,10 @@ void Phi_Inclusive_G::analyze(
   // there is no need to analyze further if there is no phi -> K+K- decay
   if( !bAnalyzer.analyzeEvent(ev.id())) hPhiToKplusKminus->Fill(0);
   else{
-
+    hKKGen_Eta_Pt -> Fill(genKaons[0]->eta(), genKaons[0]->pt());
+    hKKGen_Eta_Pt -> Fill(genKaons[1]->eta(), genKaons[1]->pt());
+    hKKGen_pT -> Fill(genKaons[0]->pt());
+    hKKGen_pT -> Fill(genKaons[1]->pt());
     hPhiToKplusKminus->Fill(1);
     // to find the PV
     
@@ -356,6 +368,8 @@ void Phi_Inclusive_G::analyze(
       // all the reco kaons provided they are reconstructable
       hKKpT_recoVSgen -> Fill(matchedParticles[0]->pt(), genKaons[0]->pt());
       hKKpT_recoVSgen -> Fill(matchedParticles[1]->pt(), genKaons[1]->pt());
+      hKKReco_Eta_Pt -> Fill(matchedParticles[0]->eta(), matchedParticles[0]->pt());
+      hKKReco_Eta_Pt -> Fill(matchedParticles[1]->eta(), matchedParticles[1]->pt());
       //hKK_deltaR -> Fill( reco::deltaR(matchedParticles[0]->momentum(), matchedParticles[1]->momentum()));
       hKK_vz_allReco -> Fill( abs(matchedParticles[0]->vz() - matchedParticles[1]->vz()));
     }
@@ -367,16 +381,21 @@ void Phi_Inclusive_G::analyze(
     std::cout << "Matching successful: " << photonMatcher.isSuccessful() << std::endl;
     std::vector< const reco::Candidate*> matchedPhotons = photonMatcher.getMatched();
     
+    
     //////////////////// HLT analysis
-    if(!accepted) hHLT->Fill(0);
-    else if(accepted){
+    if(!accepted){
+      hHLT->Fill(0);
+    }else if(accepted){  
       hHLT->Fill(1);
       if( particleMatcher.isSuccessful() && photonMatcher.isSuccessful()) hHLT_phiToKK_gamma->Fill(1);
       if (particleMatcher.isSuccessful()) hHLT_phiToKK->Fill(1);
       if (photonMatcher.isSuccessful()) hHLT_gamma->Fill(1);
+    }
 
-    }else if( accepted && particleMatcher.isSuccessful() && photonMatcher.isSuccessful()){
-
+    std::cout <<"HLT/ Kaon matcher/ photon matcher: "<< accepted << particleMatcher.isSuccessful() << photonMatcher.isSuccessful() <<endl;
+    
+    if( particleMatcher.isSuccessful() && photonMatcher.isSuccessful()){
+      std::cout << " muons were matched AND photon was matched" << std::endl;
       hKK_vz -> Fill( abs(matchedParticles[0]->vz() - matchedParticles[1]->vz()));
       hKK_deltaR -> Fill( reco::deltaR(matchedParticles[0]->momentum(), matchedParticles[1]->momentum()));
       const std::vector<reco::Vertex> & PVertices = ev.get(thePVToken); 
@@ -415,8 +434,10 @@ void Phi_Inclusive_G::analyze(
         hVtxProbKK ->Fill( probability );
         std::cout << "Vtx prob of kaons: " << probability << std::endl;
         math::XYZPoint fittedSV = kaonVertex.position();
-
+        std::cout << "Fitted SV: " << fittedSV << std::endl;
         math::XYZPoint pca_reco = DecayTools::pca(pv, fittedSV, pKK);
+        std::cout << "PCA: " << pca_reco << std::endl;
+
         hPCA->Fill(sqrt((pca_reco - pv).Mag2()));
         hPCA_T->Fill(sqrt((pca_reco - pv).Perp2()));
         hPCAz->Fill(abs(pca_reco.z() - pv.z()));
@@ -442,23 +463,29 @@ void Phi_Inclusive_G::analyze(
       const reco::Candidate* recoPhotonAsKaon = dynamic_cast<const reco::Candidate*>(matchedPhotons[0]);
       if (recoPhotonAsKaon) {
         recoKaonsWithRecoPhoton.push_back(recoPhotonAsKaon);
+      }else{
+        std::cerr << "Error: dynamic_cast failed for reco photon." << std::endl;
       }
-      auto recoPhotonFourMomenta = DecayTools::fourMomenta(recoKaonsWithRecoPhoton, DecayTools::KKMasses);
+      std::cout << "RecoPhotonFourMomenta: " << recoKaonsWithRecoPhoton.size()<< std::endl;
+      auto recoPhotonFourMomenta = DecayTools::fourMomenta(recoKaonsWithRecoPhoton, DecayTools::KKGmasses);
 
       // Reco kaons gen photon
       recoKaonsWithGenPhoton.push_back(genPhotons[0]);
-      auto genPhotonFourMomenta = DecayTools::fourMomenta(recoKaonsWithGenPhoton, DecayTools::KKMasses);
+      std::cout << "GenPhotonFourMomenta: " << recoKaonsWithGenPhoton.size()<< std::endl;
+      auto genPhotonFourMomenta = DecayTools::fourMomenta(recoKaonsWithGenPhoton, DecayTools::KKGmasses);
 
       // Reco kaons, reco photon direction, gen photon magnitude
-      double P4recoDirGenMag = DecayTools::scaledInvariant(matchedParticles, genPhotons[0], matchedPhotons[0], DecayTools::KKMasses);
+      double P4recoDirGenMag = DecayTools::scaledInvariant(matchedParticles, genPhotons[0], matchedPhotons[0], DecayTools::KKGmasses);
       // Reco kaons, gen photon direction, reco photon magnitude
-      double P4recoMagGenDir = DecayTools::scaledInvariant(matchedParticles, matchedPhotons[0], genPhotons[0], DecayTools::KKMasses);
+      double P4recoMagGenDir = DecayTools::scaledInvariant(matchedParticles, matchedPhotons[0], genPhotons[0], DecayTools::KKGmasses);
 
       std::cout << "Invariant mass of the Bs meson: " << recoPhotonFourMomenta.M() << std::endl;
       std::cout << "Invariant mass of the Bs meson (gen): " << genPhotonFourMomenta.M() << std::endl;
       std::cout << "Invariant mass of the Bs meson (reco kaons, reco photon direction, gen photon magnitude): " << P4recoDirGenMag << std::endl;
       std::cout << "Invariant mass of the Bs meson (reco kaons, gen photon direction, reco photon magnitude): " << P4recoMagGenDir << std::endl;
+      std::cout << "Invariant mass of the Phi meson (reco muons): " << DecayTools::invariantMass(matchedParticles, DecayTools::KKMasses) << std::endl;
 
+      hPhiMass ->Fill(DecayTools::invariantMass(matchedParticles, DecayTools::KKMasses));
       hRecoPhotonFourMomentaMass->Fill(recoPhotonFourMomenta.M());
       hGenPhotonFourMomentaMass->Fill(genPhotonFourMomenta.M());
       hRecoKaons_GenPhotonDir_RecoPhotonMag->Fill(P4recoMagGenDir);

@@ -29,8 +29,6 @@
 <use   name="MagneticField/Engine"/>
 <use   name="MagneticField/Records"/>
 
-<use   name="interface/HLTdecision"/>
-
 <use   name="clhep"/>
 <use   name="hepmc"/>
 <use   name="heppdt"/>
@@ -39,7 +37,7 @@
   <flags   EDM_PLUGIN="1"/>
 </library>
 
-<library   file="ControlChannelPhi.cc" name="ControlChannelPhi">
+<library   file="ControlChannelPhi.cc src/HLTdecision.cc" name="ControlChannelPhi">
   <flags   EDM_PLUGIN="1"/>
 </library>
 

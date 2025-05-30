@@ -112,7 +112,7 @@ private:
   TH1D *hNofPV;
   TH2D *h_pGT_pMMT;
   TH1D *h_pGT_pMMT_ratio;
-  TH1D *h_alfa;
+  TH1D *h_alpha;
   TH1D *h_beta;
   TH1D *h_pGT_pMM_angle;
 
@@ -123,6 +123,13 @@ private:
   TH1D *hRecoMuons_GenPhotonDir_RecoPhotonMag;
   TH1D *hRecoPhotonFourMomentaMass;
   TH1D *hGenPhotonFourMomentaMass;
+
+  TH1D *h3Ddisp_mu;
+  TH1D *h3DdispErr_mu;
+  TH1D *h3DdispSignificance_mu;
+
+  TH1D *hMuMuDeltaR_all;
+  TH1D *hMuMuDeltaR_matched;
 
 };
 
@@ -152,42 +159,49 @@ PVdistance::~PVdistance()
 void PVdistance::beginJob()
 {
 
-  hPhiMass = new TH1D("hPhiMass", "Reconstruction of #Phi ; M_{inv} [GeV]; Events", 3000 , 0.9, 1.2);
+  hPhiMass = new TH1D("hPhiMass", "Reconstruction of #Phi ; M_{inv} [GeV]; Events", 300 , 0.9, 1.2);
 
   hPCAz_testSV = new TH1D("hPCAz_testSV", "|PCA-PV|_{z} calculated using Candidate::vertex() method; Distance [cm]; Events", 200, 0., 0.2);
   
-  hPCAz = new TH1D("hPCAz", "|PCA-PV|_{z}; Distance [cm]; Events", 2000, 0., 1.);
-  hPCA = new TH1D("hPCA", "|PCA-PV|; Distance [cm]; Events", 2000, 0., 1.);
-  hPCA_T = new TH1D("hPCA_T", "|PCA-PV|_{T}; Distance [cm]; Events", 2000, 0., 1.);
-  hPCAz_true = new TH1D("hPCAz_true", "|PCA-PV|_{z}; Distance [cm]; Events", 2000, 0., 0.2);
-  hPCA_true = new TH1D("hPCA_true", "|PCA-PV|; Distance [cm]; Events", 2000, 0., 0.2);
-  hPCA_T_true = new TH1D("hPCA_T_true", "|PCA-PV|_{T}; Distance [cm]; Events", 2000, 0., 0.2);
+  hPCAz = new TH1D("hPCAz", "|PCA-PV|_{z}; Distance [cm]; Events", 20000, 0., 0.2);
+  hPCA = new TH1D("hPCA", "|PCA-PV|; Distance [cm]; Events", 20000, 0., 0.2);
+  hPCA_T = new TH1D("hPCA_T", "|PCA-PV|_{T}; Distance [cm]; Events", 20000, 0., 0.2);
+  hPCAz_true = new TH1D("hPCAz_true", "|PCA-PV|_{z}; Distance [cm]; Events", 2000, 0., 0.02);
+  hPCA_true = new TH1D("hPCA_true", "|PCA-PV|; Distance [cm]; Events", 2000, 0., 0.02);
+  hPCA_T_true = new TH1D("hPCA_T_true", "|PCA-PV|_{T}; Distance [cm]; Events", 2000, 0., 0.02);
 
-  hPvSv = new TH1D("hPvSv", "|SV-PV|; Distance [cm]; Events", 4000, 0.,4.);
-  hMuMu_vz = new TH1D("hMuMu_vz", "|delta vz|; Distance [cm]; Events", 500000, 0.,5.);
-  hMuMu_vz_allReco = new TH1D("hMuMu_vz_allReco", "|v_{\\mu^+, z}-v_{\\mu^-, z}|; Distance [cm]; Events", 500000, 0.,5.);
+  hPvSv = new TH1D("hPvSv", "|SV-PV|; Distance [cm]; Events", 400, 0.,4.);
+  hMuMu_vz = new TH1D("hMuMu_vz", "|delta vz|; Distance [cm]; Events", 25000, 0.,2.5);
+  hMuMu_vz_allReco = new TH1D("hMuMu_vz_allReco", "|v_{\\mu^+, z}-v_{\\mu^-, z}|; Distance [cm]; Events", 250000, 0.,2.5);
 
   hPVequalToSV = new TH1D("hPVequalToSV", "Number of events where PV^{gen}=SV^{gen}; N_{PV}; Events", 3, -0.5, 2.5);
   hNofPV = new TH1D("hNofPV", "Number of PV^{reco}, fully reconstructed events; N_{PV}; Events", 5, -0.5, 4.5);
 
-  h_pGT_pMMT = new TH2D("h_pGT_pMMT", "Reconstructed transverse momentum of \\mu\\mu vs \\gamma; p_{\\mu\\mu} [GeV]; p_{\\gamma} [GeV]", 700, 0, 70, 700, 0, 70);
+  h_pGT_pMMT = new TH2D("h_pGT_pMMT", "Reconstructed transverse momentum of \\mu\\mu vs \\gamma; p_{\\mu\\mu} [GeV]; p_{\\gamma} [GeV]", 1000, 0, 10, 1000, 0, 10);
   h_pGT_pMMT_ratio = new TH1D("h_pGT_pMMT_ratio", "Ratio of (p_{\\mu\\mu}-p_{\\gamma})/p_{\\mu\\mu}; Ratio; Events", 100, 0, 10);
-  h_alfa = new TH1D("h_alfa", "Scaling factor; \\alfa; Events", 2000, -10., 10.);
+  h_alpha = new TH1D("h_alpha", "Scaling factor; \\alpha; Events", 2000, -10., 10.);
   h_beta = new TH1D("h_beta", "Scaling factor; \\beta; Events", 2000, -10., 10.);
-  h_pGT_pMM_angle = new TH1D("h_pGT_pMM_angle", "cos(p_{\\gamma,T}; cos(\\{alfa}); Events", 1000, -1, 1);
+  h_pGT_pMM_angle = new TH1D("h_pGT_pMM_angle", "cosine; cos(\\alpha); Events", 1000, -1, 1);
 
   //PRESELCTION
-  hVtxProbMuMu = new TH1D("hVtxProbMuMu", "Vtx prob of muons; Vtx prob; Events", 100, 0., 1.);
+  hVtxProbMuMu = new TH1D("hVtxProbMuMu", "Vtx prob of muons; Vtx prob; Events", 1000, 0., 1.);
   hVtxProbMuMuG = new TH1D("hVtxProbMuMuG", "Vtx prob of muons and photon; Vtx prob; Events", 100, 0., 1.);
 
   hRecoMuons_RecoPhotonDir_GenPhotonMag = new TH1D("hRecoMuons_RecoPhotonDir_GenPhotonMag", 
-    "Reco muons, reco photon direction, gen photon magnitude; M_{inv} [GeV]; Counts", 3000, 0, 10);
+    "Reco muons, reco photon direction, gen photon magnitude; M_{inv} [GeV]; Counts", 600, 4, 7);
   hRecoMuons_GenPhotonDir_RecoPhotonMag = new TH1D("hRecoMuons_GenPhotonDir_RecoPhotonMag", 
-    "Reco muons, gen photon direction, reco photon magnitude; M_{inv} [GeV]; Counts", 3000, 0, 10);
+    "Reco muons, gen photon direction, reco photon magnitude; M_{inv} [GeV]; Counts", 600, 4, 7);
   hRecoPhotonFourMomentaMass = new TH1D("hRecoPhotonFourMomentaMass", 
-    "Invariant mass of reco muons and reco photon; M_{inv} [GeV]; Counts", 3000, 0, 10);
+    "Invariant mass of reco muons and reco photon; M_{inv} [GeV]; Counts", 600, 4, 7);
   hGenPhotonFourMomentaMass = new TH1D("hGenPhotonFourMomentaMass", 
-    "Invariant mass of reco muons and gen photon; M_{inv} [GeV]; Counts", 3000, 0, 10);
+    "Invariant mass of reco muons and gen photon; M_{inv} [GeV]; Counts", 600, 4, 7);
+
+  h3Ddisp_mu = new TH1D("h3Ddisp_mu", "3D displacement; Distance [cm]; Events", 2000, 0, 5);
+  h3DdispErr_mu = new TH1D("h3DdispErr_mu", "3D displacement error; Distance [cm]; Events", 2000, 0, 5);
+  h3DdispSignificance_mu = new TH1D("h3DdispSignificance_mu", "3D displacement significance; Significance; Events", 6000, 0, 60);
+
+  hMuMuDeltaR_all = new TH1D("hMuMuDeltaR_all", "DeltaR between all pairs of reco muons; #DeltaR; Events", 100, 0, 5);
+  hMuMuDeltaR_matched = new TH1D("hMuMuDeltaR_matched", "DeltaR between matched muons; #DeltaR; Events", 250, 0, 0.5);
 
   cout << "HERE PVdistance::beginJob()" << endl;
 }
@@ -213,7 +227,7 @@ void PVdistance::endJob()
   hNofPV -> Write();
   h_pGT_pMMT -> Write();
   h_pGT_pMMT_ratio -> Write();
-  h_alfa -> Write();
+  h_alpha -> Write();
   h_beta -> Write();
   h_pGT_pMM_angle -> Write();
   hVtxProbMuMu -> Write();
@@ -224,6 +238,12 @@ void PVdistance::endJob()
   hRecoMuons_GenPhotonDir_RecoPhotonMag->Write();
   hRecoPhotonFourMomentaMass->Write();
   hGenPhotonFourMomentaMass->Write();
+
+  h3Ddisp_mu -> Write();
+  h3DdispErr_mu -> Write();
+  h3DdispSignificance_mu -> Write();
+  hMuMuDeltaR_all->Write();
+  hMuMuDeltaR_matched->Write();
 
   myRootFile.Close();
 
@@ -242,7 +262,7 @@ void PVdistance::endJob()
   delete hNofPV;
   delete h_pGT_pMMT;
   delete h_pGT_pMMT_ratio;
-  delete h_alfa;
+  delete h_alpha;
   delete h_beta;
   delete hVtxProbMuMu;
   delete hVtxProbMuMuG;
@@ -252,6 +272,12 @@ void PVdistance::endJob()
   delete hRecoMuons_GenPhotonDir_RecoPhotonMag;
   delete hRecoPhotonFourMomentaMass;
   delete hGenPhotonFourMomentaMass;
+
+  delete h3Ddisp_mu;
+  delete h3DdispErr_mu;
+  delete h3DdispSignificance_mu;
+  delete hMuMuDeltaR_all;
+  delete hMuMuDeltaR_matched;
 
   cout << "HERE PVdistance::endJob()" << endl;
 }
@@ -276,6 +302,7 @@ void PVdistance::analyze(
   HLTdecision HLTdecision(theTriggerResultsToken, ev, theConfig);
   bool accepted = HLTdecision.checkTriggers(ev, true); //print = true
   //if(!accepted) return ;
+
 
   ///////////////////////////////Trigger was fired
   BDecayAnalyzer bAnalyzer;
@@ -321,11 +348,11 @@ void PVdistance::analyze(
     
     //reconstructable events
     hMuMu_vz ->Fill(abs(matchedMuons[0]->vz() - matchedMuons[1]->vz()));
-
+    hMuMuDeltaR_matched -> Fill(reco::deltaR(*matchedMuons[0], *matchedMuons[1]));
 
   
     math::XYZPoint pv     = PVertices[0].position();    // recoPV - the first out of the list
-    math::XYZPoint pv_gen = tree[0].back()->vertex();   //vertex of the Bs0 meson
+    math::XYZPoint pv_gen = tree[0][0]->vertex();   //vertex of the Bs0 meson
                                                         //the last one from the first row of the tree
     //math::XYZPoint sv_test  = matchedMuons[0]->vertex();//Candidate::vertex() method (to check the difference)
     math::XYZPoint svG      = genMuons[0]->vertex();    //vertex of the muons from the phi decay
@@ -397,6 +424,8 @@ void PVdistance::analyze(
 
       /////////////////////////////// p_{\mu\mu} vs p_{\gamma}
 
+      
+
       math::XYZVectorD bsDirection = (fittedSV - pv).Unit(); //direction of the Bs0 meson
       math::XYZVectorD pMuMuT = pMuMu - bsDirection.Dot(pMuMu)*bsDirection;
       math::XYZVectorD pGammaT = matchedPhotons[0]->momentum() - bsDirection.Dot(matchedPhotons[0]->momentum())*bsDirection;
@@ -404,10 +433,10 @@ void PVdistance::analyze(
       h_pGT_pMMT -> Fill(pMuMuT.R(), pGammaT.R());
       h_pGT_pMMT_ratio -> Fill((pMuMuT.R() - pGammaT.R())/pMuMuT.R());
 
-      // Calculate scaling factor alfa
-      double alfa = -(pMuMuT.Dot(pGammaT)) / pGammaT.Mag2();
+      // Calculate scaling factor alpha
+      double alpha = -(pMuMuT.Dot(pGammaT)) / pGammaT.Mag2();
       double beta = - pMuMuT.Mag2() / pGammaT.Dot(pMuMuT);
-      h_alfa->Fill(alfa);
+      h_alpha->Fill(alpha);
       h_beta->Fill(beta);
       h_pGT_pMM_angle->Fill(pGammaT.Dot(pMuMuT)/(pGammaT.R()*pMuMuT.R()));
       
@@ -453,6 +482,30 @@ void PVdistance::analyze(
         hRecoMuons_GenPhotonDir_RecoPhotonMag->Fill(P4recoMagGenDir);
         hRecoMuons_RecoPhotonDir_GenPhotonMag->Fill(P4recoDirGenMag);
 
+        GlobalPoint svPos_mu(fittedSV.x(), fittedSV.y(), fittedSV.z());
+        math::XYZPoint svPosXYZ_mu(svPos_mu.x(), svPos_mu.y(), svPos_mu.z());
+        math::XYZVector displacement_mu = svPosXYZ_mu - pv;
+
+        // Get covariance matrices
+        AlgebraicSymMatrix33 svCov_mu = muonVertex.covariance();
+        AlgebraicSymMatrix33 pvCov_mu = PVertices[0].covariance();
+        AlgebraicSymMatrix33 totalCov_mu = svCov_mu + pvCov_mu;
+
+        // Calculate displacement error
+        AlgebraicVector3 dispVec_mu(displacement_mu.x(), displacement_mu.y(), displacement_mu.z());
+        double displacementError_mu = std::sqrt(ROOT::Math::Similarity(dispVec_mu, totalCov_mu));
+
+        double displacementSignificance_mu = displacement_mu.r() / displacementError_mu;
+
+        h3Ddisp_mu -> Fill(displacement_mu.R());
+        h3DdispErr_mu -> Fill(displacementError_mu);
+        h3DdispSignificance_mu -> Fill(displacementSignificance_mu);
+        std::cout << "Displacement: (" 
+                  << displacement_mu.x() << ", "
+                  << displacement_mu.y() << ", "
+                  << displacement_mu.z() << "), length: " << displacement_mu.R()<< std::endl;
+        std::cout << "Displacement error: " << displacementError_mu << std::endl;
+        std::cout << "Displacement significance: " << displacementSignificance_mu << std::endl;
       }
 
       
