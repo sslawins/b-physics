@@ -1,4 +1,4 @@
-<use   name="root"/>
+<use name="root"/>
 <use   name="FWCore/Framework"/>
 <use   name="FWCore/ParameterSet"/>
 <use   name="SimDataFormats/Track"/>
@@ -74,5 +74,17 @@
 </library>
 
 <library   file="PhotonFitting.cc" name="PhotonFitting">
+  <flags   EDM_PLUGIN="1"/>
+</library>
+
+<library   file="RecoPhoton.cc" name="RecoPhoton">
+  <flags   EDM_PLUGIN="1"/>
+</library>
+
+<library   file="TestTime.cc" name="TestTime">
+  <flags   EDM_PLUGIN="1"/>
+</library>
+
+<library   file="MarcinsIdea.cc" name="MarcinsIdea">
   <flags   EDM_PLUGIN="1"/>
 </library>
