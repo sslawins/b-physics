@@ -56,6 +56,7 @@
 
 #include "TH1D.h"
 #include "TH2D.h"
+#include "TProfile.h"
 #include "TFile.h"
 #include "TMath.h"
 #include "TString.h"
@@ -117,6 +118,18 @@ private:
 
   TH1D* hBsMassResidualCorrected;
 
+  TH1D* hDimuonMassResidualNoFit;
+  TH1D* hDimuonMassResidualWithFit;
+  TH1D* hMuonFitGenGammaResidual;
+
+  TH1D* hScaledBsMassResidual;
+
+  TH1D* hDimuonGammaCosInBsFrame;
+
+  TH1D* hScale;
+
+  TProfile* hRecoVsGenEnergyProfile;
+
   TTree* theTree;
   std::vector<float> vPVToSV;
   std::vector<float> vPhotonMomentum;
@@ -177,6 +190,18 @@ void MarcinsIdea::beginJob()
 
   hBsMassResidualCorrected = new TH1D("hBsMassResidualCorrected", "hBsMassResidualCorrected", 100, -0.5, 0.5);
 
+  hDimuonMassResidualNoFit = new TH1D("hDimuonMassResidualNoFit", "hDimuonMassResidualNoFit", 100, -0.2, 0.2);
+  hDimuonMassResidualWithFit = new TH1D("hDimuonMassResidualWithFit", "hDimuonMassResidualWithFit", 100, -0.2, 0.2);
+  hMuonFitGenGammaResidual = new TH1D("hMuonFitGenGammaResidual", "hMuonFitGenGammaResidual", 100, -0.2, 0.2);
+
+  hScaledBsMassResidual = new TH1D("hScaledBsMassResidual", "hScaledBsMassResidual", 100, -0.5, 0.5);
+
+  hDimuonGammaCosInBsFrame = new TH1D("hDimuonGammaCosInBsFrame", "hDimuonGammaCosInBsFrame", 100, -1, 1);
+
+  hScale = new TH1D("hScale", "hScale", 100, -2, 2);
+
+  hRecoVsGenEnergyProfile = new TProfile("hRecoVsGenEnergyProfile", "hRecoVsGenEnergyProfile; gen Energy; reco Energy", 35, 0, 35, "s");
+
   theTree = new TTree("theTree", "theTree");
   theTree->Branch("vPVToSV", &vPVToSV);
   theTree->Branch("vPhotonMomentum", &vPhotonMomentum);
@@ -202,8 +227,20 @@ void MarcinsIdea::endJob()
   hBsMassResidual->Write();
 
   hBsMassResidualCorrected->Write();
+
+  hDimuonMassResidualNoFit->Write();
+  hDimuonMassResidualWithFit->Write();
+  hMuonFitGenGammaResidual->Write();
+
+  hScaledBsMassResidual->Write();
+
+  hDimuonGammaCosInBsFrame->Write();
+
+  hScale->Write();
+
+  hRecoVsGenEnergyProfile->Write();
   
-  theTree->Write();
+  // theTree->Write();
 
   myRootFile.Close();
 
@@ -217,6 +254,18 @@ void MarcinsIdea::endJob()
   delete hBsMassResidual;
 
   delete hBsMassResidualCorrected;
+
+  delete hDimuonMassResidualNoFit;
+  delete hDimuonMassResidualWithFit;
+  delete hMuonFitGenGammaResidual;
+
+  delete hScaledBsMassResidual;
+
+  delete hDimuonGammaCosInBsFrame;
+
+  delete hScale;
+
+  delete hRecoVsGenEnergyProfile;
 
   delete theTree;
 
@@ -310,12 +359,18 @@ void MarcinsIdea::analyze(
         matched = true;
       }
     }
-    if (matched && minDR < 0.03)
+    if (matched && minDR < 0.02)
     {
       recoMatchedPhotons.push_back(bestMatchedPhoton);
       genMatchedPhotons.push_back(genPh);
     }
   }
+  if(recoMatchedPhotons.size() == 0) return;
+
+  hRecoVsGenEnergyProfile->Fill(genMatchedPhotons[0]->energy(), recoMatchedPhotons[0]->energy());
+
+
+  if(recoMatchedPhotons[0]->isEB() == 0) return; // only EB photons
 
   // kinematic particle creation
   
@@ -360,16 +415,20 @@ void MarcinsIdea::analyze(
   GlobalVector dimuonMomentum = fitParticle->currentState().kinematicParameters().momentum();
   math::XYZTLorentzVector dimuonP4(dimuonMomentum.x(), dimuonMomentum.y(), dimuonMomentum.z(), fitParticle->currentState().kinematicParameters().energy());
 
+  hDimuonMassResidualNoFit->Fill((recoMatchedMuons.at(0)->p4() + recoMatchedMuons.at(1)->p4()).mass() - (genMatchedMuons.at(0)->p4() + genMatchedMuons.at(1)->p4()).mass());
+  hDimuonMassResidualWithFit->Fill(dimuonP4.mass() - (genMatchedMuons.at(0)->p4() + genMatchedMuons.at(1)->p4()).mass());
 
   GlobalPoint pvGlobalPoint(primaryVertices[0].position().x(), primaryVertices[0].position().y(), primaryVertices[0].position().z());
   GlobalVector PVToSV = fittedGlobalPoint - pvGlobalPoint;
 
   if(recoMatchedPhotons.size() != 1) return;
 
+  hMuonFitGenGammaResidual->Fill((dimuonP4 + genMatchedPhotons.at(0)->p4()).mass() - (genMatchedMuons.at(0)->p4() + genMatchedMuons.at(1)->p4() + genMatchedPhotons.at(0)->p4()).mass());
+
   reco::Photon recoPhoton = *recoMatchedPhotons.at(0);
 
   recoPhoton.setVertex(reco::Candidate::Point(fittedGlobalPoint.x(), fittedGlobalPoint.y(), fittedGlobalPoint.z()));
-  math::XYZTLorentzVector photonP4 = recoPhoton.p4();\
+  math::XYZTLorentzVector photonP4 = genMatchedPhotons[0]->p4();
   GlobalVector photonMomentum(photonP4.x(), photonP4.y(), photonP4.z());
 
   double BsMass = (dimuonP4 + photonP4).mass();
@@ -386,8 +445,11 @@ void MarcinsIdea::analyze(
   GlobalVector u = SVToCalo.unit();
   GlobalVector v = dimuonMomentum;
 
+  hDimuonGammaCosInBsFrame->Fill(w.cross(u).unit().dot(w.cross(v).unit()));
+
   std::cout << "p4 cross pt to sv " << (dimuonMomentum + photonMomentum).unit().cross(w).mag() << std::endl;
 
+  // minimize the transverse component of the Bs
   double E = (w.dot(v)*w.dot(u) - v.dot(u))/(1 - w.dot(u)*w.dot(u));
 
   std::cout << "E: " << E << std::endl;
@@ -405,7 +467,18 @@ void MarcinsIdea::analyze(
   vDimuonMomentum.clear(); vDimuonMomentum.push_back(dimuonMomentum.x()); vDimuonMomentum.push_back(dimuonMomentum.y()); vDimuonMomentum.push_back(dimuonMomentum.z());
 
   theTree->Fill();
+
+  // other idea, scale the photon momentum to the dimuon momentum, in the Bs transverse plane
+  GlobalVector dimuonTransverse = w.cross(v);
+  GlobalVector photonTransverse = w.cross(photonMomentum);
+  double scaleFactor = dimuonTransverse.mag() / photonTransverse.mag();
+
+  hScale->Fill(scaleFactor);
+
+  math::XYZTLorentzVector scaledPhotonP4 = photonP4 * scaleFactor;
+  double scaledBsMass = (dimuonP4 + scaledPhotonP4).mass();
   
+  hScaledBsMassResidual->Fill((scaledBsMass - 5.366));
 
   cout <<"*** Analyze event: " << ev.id() <<" analysed event count:" << ++theEventCount << endl;
 }
