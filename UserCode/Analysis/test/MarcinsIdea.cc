@@ -129,6 +129,17 @@ private:
   TH1D* hScale;
 
   TProfile* hRecoVsGenEnergyProfile;
+  TProfile* hRecoVsGenPtBsFrameMuonProfile;
+  TProfile* hRecoVsGenPtBsFramePhotonProfile;
+  TProfile* hRecoVsGenPtBsFramePhotonProfileCorrected;
+
+
+  TH1D* hDimuonAngleInBsFrame;
+  TH1D* hPhotonAngleInBsFrame;
+
+  TH1D* hDimuonVertexXResidual;
+  TH1D* hDimuonVertexYResidual;
+  TH1D* hDimuonVertexZResidual;
 
   TTree* theTree;
   std::vector<float> vPVToSV;
@@ -202,6 +213,17 @@ void MarcinsIdea::beginJob()
 
   hRecoVsGenEnergyProfile = new TProfile("hRecoVsGenEnergyProfile", "hRecoVsGenEnergyProfile; gen Energy; reco Energy", 35, 0, 35, "s");
 
+  hRecoVsGenPtBsFrameMuonProfile = new TProfile("hRecoVsGenPtBsFrameMuonProfile", "hRecoVsGenPtBsFrameMuonProfile; gen Pt in Bs frame; reco Pt in Bs frame", 15, 0, 3, "s");
+  hRecoVsGenPtBsFramePhotonProfile = new TProfile("hRecoVsGenPtBsFramePhotonProfile", "hRecoVsGenPtBsFramePhotonProfile; gen Pt in Bs frame; reco Pt in Bs frame", 15, 0, 3, "s");
+  hRecoVsGenPtBsFramePhotonProfileCorrected = new TProfile("hRecoVsGenPtBsFramePhotonProfileCorrected", "hRecoVsGenPtBsFramePhotonProfileCorrected; gen Pt in Bs frame; reco Pt in Bs frame", 15, 0, 3, "s");
+
+  hDimuonAngleInBsFrame = new TH1D("hDimuonAngleInBsFrame", "hDimuonAngleInBsFrame; dimuon in Bs frame, reco vs gen [degrees]", 100, 0, 10);
+  hPhotonAngleInBsFrame = new TH1D("hPhotonAngleInBsFrame", "hPhotonAngleInBsFrame; gamma in Bs frame, reco vs gen [degrees]", 100, 0, 10);
+
+  hDimuonVertexXResidual = new TH1D("hDimuonVertexXResidual", "hDimuonVertexXResidual; [cm]", 100, -0.05, 0.05);
+  hDimuonVertexYResidual = new TH1D("hDimuonVertexYResidual", "hDimuonVertexYResidual; [cm]", 100, -0.05, 0.05);
+  hDimuonVertexZResidual = new TH1D("hDimuonVertexZResidual", "hDimuonVertexZResidual; [cm]", 100, -0.05, 0.05);
+
   theTree = new TTree("theTree", "theTree");
   theTree->Branch("vPVToSV", &vPVToSV);
   theTree->Branch("vPhotonMomentum", &vPhotonMomentum);
@@ -239,6 +261,17 @@ void MarcinsIdea::endJob()
   hScale->Write();
 
   hRecoVsGenEnergyProfile->Write();
+
+  hRecoVsGenPtBsFrameMuonProfile->Write();
+  hRecoVsGenPtBsFramePhotonProfile->Write();
+  hRecoVsGenPtBsFramePhotonProfileCorrected->Write();
+
+  hDimuonAngleInBsFrame->Write();
+  hPhotonAngleInBsFrame->Write();
+
+  hDimuonVertexXResidual->Write();
+  hDimuonVertexYResidual->Write();
+  hDimuonVertexZResidual->Write();
   
   // theTree->Write();
 
@@ -266,6 +299,17 @@ void MarcinsIdea::endJob()
   delete hScale;
 
   delete hRecoVsGenEnergyProfile;
+
+  delete hRecoVsGenPtBsFrameMuonProfile;
+  delete hRecoVsGenPtBsFramePhotonProfile;
+  delete hRecoVsGenPtBsFramePhotonProfileCorrected;
+
+  delete hDimuonAngleInBsFrame;
+  delete hPhotonAngleInBsFrame;
+
+  delete hDimuonVertexXResidual;
+  delete hDimuonVertexYResidual;
+  delete hDimuonVertexZResidual;
 
   delete theTree;
 
@@ -300,6 +344,8 @@ void MarcinsIdea::analyze(
   vector<const reco::Photon*> recoMatchedPhotons;
   vector<const reco::Candidate*> genMatchedPhotons;
 
+
+  GlobalPoint genSV;
   for(const auto& genP : genPar)
   {
     if (abs(genP.pdgId()) == 531)
@@ -316,6 +362,7 @@ void MarcinsIdea::analyze(
           if(abs(genP.daughter(i)->pdgId()) == 13) genMuons.push_back(genP.daughter(i));
           if(abs(genP.daughter(i)->pdgId()) == 22) genPhotons.push_back(genP.daughter(i));
         }
+        genSV = GlobalPoint(genP.daughter(0)->vx(), genP.daughter(0)->vy(), genP.daughter(0)->vz());
       }
     }
   }
@@ -412,6 +459,10 @@ void MarcinsIdea::analyze(
 
   GlobalPoint fittedGlobalPoint = fitVertex->position();
 
+  hDimuonVertexXResidual->Fill(fittedGlobalPoint.x() - genSV.x());
+  hDimuonVertexYResidual->Fill(fittedGlobalPoint.y() - genSV.y());
+  hDimuonVertexZResidual->Fill(fittedGlobalPoint.z() - genSV.z());
+
   GlobalVector dimuonMomentum = fitParticle->currentState().kinematicParameters().momentum();
   math::XYZTLorentzVector dimuonP4(dimuonMomentum.x(), dimuonMomentum.y(), dimuonMomentum.z(), fitParticle->currentState().kinematicParameters().energy());
 
@@ -428,7 +479,7 @@ void MarcinsIdea::analyze(
   reco::Photon recoPhoton = *recoMatchedPhotons.at(0);
 
   recoPhoton.setVertex(reco::Candidate::Point(fittedGlobalPoint.x(), fittedGlobalPoint.y(), fittedGlobalPoint.z()));
-  math::XYZTLorentzVector photonP4 = genMatchedPhotons[0]->p4();
+  math::XYZTLorentzVector photonP4 = recoPhoton.p4();
   GlobalVector photonMomentum(photonP4.x(), photonP4.y(), photonP4.z());
 
   double BsMass = (dimuonP4 + photonP4).mass();
@@ -479,6 +530,35 @@ void MarcinsIdea::analyze(
   double scaledBsMass = (dimuonP4 + scaledPhotonP4).mass();
   
   hScaledBsMassResidual->Fill((scaledBsMass - 5.366));
+
+
+  // angles between reco and gen dimuon and photon in Bs frame
+  GlobalVector genDimuonMomentum = GlobalVector(genMatchedMuons.at(0)->momentum().x() + genMatchedMuons.at(1)->momentum().x(), 
+                                    genMatchedMuons.at(0)->momentum().y() + genMatchedMuons.at(1)->momentum().y(), 
+                                    genMatchedMuons.at(0)->momentum().z() + genMatchedMuons.at(1)->momentum().z());
+  GlobalVector genPhotonMomentum = GlobalVector(genMatchedPhotons.at(0)->momentum().x(), 
+                                    genMatchedPhotons.at(0)->momentum().y(), 
+                                    genMatchedPhotons.at(0)->momentum().z());
+  GlobalVector genBsMomentum = genDimuonMomentum + genPhotonMomentum;
+  GlobalVector genBsDirection = genBsMomentum.unit();
+
+  GlobalVector genDimuonMomentumInBsFrame = genBsDirection.cross(genDimuonMomentum);
+  GlobalVector genPhotonMomentumInBsFrame = genBsDirection.cross(genPhotonMomentum);
+
+  GlobalVector dimuonMomentumInBsFrame = genBsDirection.cross(dimuonMomentum);
+  GlobalVector photonMomentumInBsFrame = genBsDirection.cross(photonMomentum);
+
+  hDimuonAngleInBsFrame->Fill(acos(genBsDirection.cross(dimuonMomentum).unit().dot(genBsDirection.cross(genDimuonMomentum).unit()))*180 / TMath::Pi());
+  hPhotonAngleInBsFrame->Fill(acos(genBsDirection.cross(photonMomentum).unit().dot(genBsDirection.cross(genPhotonMomentum).unit()))*180 / TMath::Pi());
+
+  hRecoVsGenPtBsFrameMuonProfile->Fill(genDimuonMomentumInBsFrame.mag(), dimuonMomentumInBsFrame.mag());
+  hRecoVsGenPtBsFramePhotonProfile->Fill(genPhotonMomentumInBsFrame.mag(), photonMomentumInBsFrame.mag());
+
+  double correctedEnergy = (photonP4.energy() - 0.599366) / 1.02408;
+  GlobalVector correctedPhotonMomentum = photonMomentum.unit() * correctedEnergy;
+  GlobalVector correctedPhotonMomentumInBsFrame = genBsDirection.cross(correctedPhotonMomentum);
+  hRecoVsGenPtBsFramePhotonProfileCorrected->Fill(genPhotonMomentumInBsFrame.mag(), correctedPhotonMomentumInBsFrame.mag());
+
 
   cout <<"*** Analyze event: " << ev.id() <<" analysed event count:" << ++theEventCount << endl;
 }

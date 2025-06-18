@@ -96,6 +96,7 @@ private:
 
 
   int nConvPhotons = 0;
+  int nCandidates = 0;
   std::vector<int> MuMuG = {22, 13, -13};
 };
 
@@ -137,7 +138,7 @@ void ConvertedPhotons::beginJob()
   //create a histogram
   nConvertedPhotons = new TH1D("nConvertedPhotons", "nConvertedPhotons", 10, 0, 10);
 
-  hBsMass = new TH1D("hBsMass", "hBsMass", 50, 3, 7);
+  hBsMass = new TH1D("hBsMass", "hBsMass", 101, 3, 7);
   hBsMassFromP4 = new TH1D("hBsMassFromP4", "hBsMassFromP4", 50, 3, 7);
   hMuPt = new TH1D("hMuPt", "hMuPt", 100, 0, 30);
   hGammaPt = new TH1D("hGammaPt", "hGammaPt", 100, 0, 30);
@@ -173,6 +174,7 @@ void ConvertedPhotons::endJob()
   delete hGammaPtWithTrigger;
 
   cout << "nConvertedPhotons: " << nConvPhotons << endl;
+  cout << "nCandidates: " << nCandidates << endl;
 
 
   cout << "HERE ConvertedPhotons::endJob()" << endl;
@@ -201,6 +203,32 @@ void ConvertedPhotons::analyze(
   vector<const reco::Candidate*> genPhotons;
   vector<RefCountedKinematicParticle> recoMatchedPhotons;
   vector<const reco::Candidate*> genMatchedPhotons;
+
+  bool trigger;
+  for (unsigned int i = 0; i < triggerResults.size(); i++)
+  {
+    TString name = triggerNames.triggerName(i);
+    if (name == "HLT_DoubleMu4_3_LowMass_v1")
+    {
+      trigger = triggerResults.accept(i);
+    }
+
+    if (name == "HLT_DoubleMu4_3_LowMass_v1" && triggerResults.accept(i) == 1 && recoMatchedPhotons.size() > 0)
+    {
+      hGammaPtWithTrigger->Fill(recoMatchedPhotons.at(0)->currentState().globalMomentum().perp());
+    }
+
+    if (name == "HLT_DoubleMu4_3_LowMass_v1" && triggerResults.accept(i) == 1 && recoMatchedPhotons.size() > 0 && recoMatchedMuons.size() > 1)
+    {
+      nCandidates++;
+    }
+  }
+
+  if (!trigger)
+  {
+    cout << "No trigger fired, skipping event." << endl;
+    return;
+  }
 
   for(const auto& genP : genPar)
   {
@@ -273,6 +301,33 @@ void ConvertedPhotons::analyze(
 
   nConvertedPhotons->Fill(convPhotons.size());
 
+
+  // reco muon matching
+  for (const reco::Candidate* genMu : genMuons)
+  {
+    float minDR = 10;
+    const reco::Muon* bestMatchedMuon;
+    bool matched = false;
+    for (const auto& recoMu : recoMuons)
+    {
+      float dR = reco::deltaR(recoMu, *genMu);
+      if (dR < minDR)
+      {
+        minDR = dR;
+        bestMatchedMuon = &recoMu;
+        matched = true;
+      }
+    }
+    // if (matched) hMuDeltaR->Fill(minDR);
+    if (matched && minDR < 0.01)
+    {
+      recoMatchedMuons.push_back(bestMatchedMuon);
+      genMatchedMuons.push_back(genMu);
+      // hRecoVsGenMuPt->Fill(genMu->pt(), bestMatchedMuon->pt());
+      // hMuPtError->Fill((bestMatchedMuon->pt() - genMu->pt())/genMu->pt());
+    }
+  }
+
   // converted photon matching
   for (const reco::Candidate* genPh : genPhotons)
   {
@@ -297,15 +352,6 @@ void ConvertedPhotons::analyze(
       // hRecoVsGenGammaPt->Fill(genPh->pt(), bestMatchedPhoton->pt());
       // hGammaPtError->Fill((bestMatchedPhoton->pt() - genPh->pt())/genPh->pt());
       hGammaPt->Fill(bestMatchedPhoton->currentState().globalMomentum().perp());
-    }
-  }
-
-  for (unsigned int i = 0; i < triggerResults.size(); i++)
-  {
-    TString name = triggerNames.triggerName(i);
-    if (name == "HLT_DoubleMu4_3_LowMass_v1" && triggerResults.accept(i) == 1 && recoMatchedPhotons.size() > 0)
-    {
-      hGammaPtWithTrigger->Fill(recoMatchedPhotons.at(0)->currentState().globalMomentum().perp());
     }
   }
 
@@ -377,7 +423,8 @@ void ConvertedPhotons::analyze(
         if (!fitVertex->vertexIsValid()) continue;
 
         // invariant mass
-        hBsMass->Fill(fitParticle->currentState().mass());
+        if(trigger)
+          hBsMass->Fill(fitParticle->currentState().mass());
 
         // lifetime
 
